@@ -58,7 +58,7 @@ class Lead(Base):
     
     # Additional info
     notes = Column(Text, nullable=True)
-    metadata = Column(JSON, nullable=True)
+    extra_data = Column(JSON, nullable=True)  # Changed from 'metadata' to avoid SQLAlchemy conflict
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)

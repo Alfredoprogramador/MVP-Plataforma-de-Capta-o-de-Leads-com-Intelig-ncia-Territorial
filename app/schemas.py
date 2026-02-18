@@ -22,7 +22,7 @@ class LeadCreate(LeadBase):
     utm_content: Optional[str] = None
     utm_term: Optional[str] = None
     landing_page_id: Optional[int] = None
-    metadata: Optional[Dict[str, Any]] = None
+    extra_data: Optional[Dict[str, Any]] = None
 
 
 class LeadUpdate(BaseModel):
@@ -35,7 +35,7 @@ class LeadUpdate(BaseModel):
     temperature: Optional[LeadTemperature] = None
     score: Optional[int] = None
     notes: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    extra_data: Optional[Dict[str, Any]] = None
 
 
 class Lead(LeadBase):

@@ -117,7 +117,7 @@ async def submit_landing_page_form(
         "utm_campaign": utm_params.get("utm_campaign"),
         "utm_content": utm_params.get("utm_content"),
         "utm_term": utm_params.get("utm_term"),
-        "metadata": {"message": submission.message} if submission.message else None
+        "extra_data": {"message": submission.message} if submission.message else None
     }
     
     # Check if lead exists
