@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} - {{ page.neighborhood }}</title>
+    <meta name="description" content="{{ page.meta_description or page.title }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .hero {
+            background: linear-gradient(135deg, #1a472a 0%, #2d5f3d 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .hero .neighborhood {
+            font-size: 24px;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+        .hero p {
+            font-size: 20px;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+        .benefits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 60px 0;
+        }
+        .benefit-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .benefit-card .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .benefit-card h3 {
+            color: #1a472a;
+            margin-bottom: 15px;
+        }
+        .form-section {
+            background: #f9f9f9;
+            padding: 60px 20px;
+        }
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .form-container h2 {
+            color: #1a472a;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: #1a472a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .submit-btn:hover {
+            background: #2d5f3d;
+        }
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .footer {
+            background: #1a472a;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>{{ page.title }}</h1>
+        <div class="neighborhood">📍 {{ page.neighborhood }}, {{ page.city }}</div>
+        <p>{{ data.get('subtitle', 'Soluções personalizadas para o seu bairro') }}</p>
+    </div>
+
+    <div class="container">
+        <div class="benefits">
+            <div class="benefit-card">
+                <div class="icon">🎯</div>
+                <h3>Atendimento Local</h3>
+                <p>Especialistas que conhecem as particularidades do {{ page.neighborhood }}</p>
+            </div>
+            <div class="benefit-card">
+                <div class="icon">⚡</div>
+                <h3>Resposta Rápida</h3>
+                <p>Atendimento imediato via WhatsApp</p>
+            </div>
+            <div class="benefit-card">
+                <div class="icon">💰</div>
+                <h3>Proposta Personalizada</h3>
+                <p>Soluções adaptadas às suas necessidades</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-container">
+            <h2>🚀 Solicite seu Atendimento</h2>
+            <form id="leadForm">
+                <div class="form-group">
+                    <label for="name">Nome Completo *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">WhatsApp *</label>
+                    <input type="tel" id="phone" name="phone" placeholder="(00) 00000-0000" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Como podemos ajudar?</label>
+                    <textarea id="message" name="message"></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    Quero Receber Atendimento
+                </button>
+            </form>
+            
+            <div class="success-message" id="successMessage">
+                <h3>✅ Cadastro realizado com sucesso!</h3>
+                <p>Em breve você receberá uma mensagem no WhatsApp.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 Lead Capture Platform. Todos os direitos reservados.</p>
+    </div>
+
+    <script>
+        document.getElementById('leadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value || null,
+                message: document.getElementById('message').value || null
+            };
+            
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryString = urlParams.toString();
+                const url = `/api/landing-pages/{{ page.id }}/submit${queryString ? '?' + queryString : ''}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    document.getElementById('leadForm').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                } else {
+                    alert('Erro ao enviar formulário. Tente novamente.');
+                }
+            } catch (error) {
+                alert('Erro ao enviar formulário. Tente novamente.');
+            }
+        });
+        
+        // Phone mask
+        document.getElementById('phone').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 11) value = value.slice(0, 11);
+            
+            if (value.length > 10) {
+                value = value.replace(/^(\d{2})(\d{5})(\d{4}).*/, '($1) $2-$3');
+            } else if (value.length > 6) {
+                value = value.replace(/^(\d{2})(\d{4})(\d{0,4}).*/, '($1) $2-$3');
+            } else if (value.length > 2) {
+                value = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+            } else if (value.length > 0) {
+                value = value.replace(/^(\d*)/, '($1');
+            }
+            
+            e.target.value = value;
+        });
+    </script>
+</body>
+</html>
