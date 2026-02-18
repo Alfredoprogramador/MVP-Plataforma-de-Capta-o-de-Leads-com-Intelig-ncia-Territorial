@@ -18,7 +18,7 @@ openai==1.6.1
 
 # PDF Generation
 reportlab==4.0.7
-WeasyPrint==60.1
+WeasyPrint==68.0
 
 # Background Tasks
 celery==5.3.4
@@ -33,7 +33,7 @@ pytz==2023.3
 validators==0.22.0
 
 # Web Server
-gunicorn==21.2.0
+gunicorn==22.0.0
 
 # Testing
 pytest==7.4.3
