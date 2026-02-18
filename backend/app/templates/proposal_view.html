@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ proposal.title }}</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #0066cc;
+        }
+        
+        .header h1 {
+            color: #0066cc;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .client-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .client-info h2 {
+            color: #555;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        
+        .client-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .proposal-details {
+            margin: 30px 0;
+        }
+        
+        .proposal-details h2 {
+            color: #0066cc;
+            margin-bottom: 15px;
+        }
+        
+        .proposal-details p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .items-table th {
+            background: #0066cc;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .items-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .total {
+            text-align: right;
+            margin: 30px 0;
+            font-size: 1.5em;
+            color: #0066cc;
+            font-weight: bold;
+        }
+        
+        .validity {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        
+        .actions {
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-accept {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .btn-accept:hover {
+            background: #45a049;
+        }
+        
+        .btn-reject {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-reject:hover {
+            background: #da190b;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            display: none;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-accepted {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-expired {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PROPOSTA COMERCIAL</h1>
+            <span class="status-badge status-{{ proposal.status }}">
+                {{ proposal.status|upper }}
+            </span>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="client-info">
+            <h2>Dados do Cliente</h2>
+            <p><strong>Nome:</strong> {{ lead.name }}</p>
+            <p><strong>Telefone:</strong> {{ lead.phone }}</p>
+            {% if lead.email %}
+            <p><strong>Email:</strong> {{ lead.email }}</p>
+            {% endif %}
+            {% if lead.neighborhood %}
+            <p><strong>Localização:</strong> {{ lead.neighborhood }}{% if lead.city %}, {{ lead.city }}{% endif %}</p>
+            {% endif %}
+        </div>
+        
+        <div class="proposal-details">
+            <h2>{{ proposal.title }}</h2>
+            {% if proposal.description %}
+            <p>{{ proposal.description }}</p>
+            {% endif %}
+        </div>
+        
+        {% if proposal.service_items %}
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Descrição</th>
+                    <th style="text-align: right;">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in proposal.service_items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.description }}</td>
+                    <td style="text-align: right;">R$ {{ "%.2f"|format(item.value) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        
+        <div class="total">
+            VALOR TOTAL: R$ {{ "%.2f"|format(proposal.total_value) }}
+        </div>
+        
+        {% if proposal.valid_until %}
+        <div class="validity">
+            <strong>⏰ Validade:</strong> Esta proposta é válida até {{ proposal.valid_until.strftime('%d/%m/%Y às %H:%M') }}
+        </div>
+        {% endif %}
+        
+        {% if proposal.status == 'pending' %}
+        <div class="actions">
+            <button class="btn btn-accept" onclick="acceptProposal()">
+                ✓ Aceitar Proposta
+            </button>
+            <button class="btn btn-reject" onclick="rejectProposal()">
+                ✗ Recusar
+            </button>
+        </div>
+        {% elif proposal.status == 'accepted' %}
+        <div class="message success" style="display: block;">
+            ✓ Esta proposta foi aceita em {{ proposal.accepted_at.strftime('%d/%m/%Y às %H:%M') }}
+        </div>
+        {% elif proposal.status == 'rejected' %}
+        <div class="message error" style="display: block;">
+            ✗ Esta proposta foi recusada
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        async function acceptProposal() {
+            if (!confirm('Tem certeza que deseja aceitar esta proposta?')) {
+                return;
+            }
+            
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const response = await fetch('/api/proposals/{{ proposal.id }}/accept', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = '✓ Proposta aceita com sucesso! Em breve entraremos em contato.';
+                    messageDiv.style.display = 'block';
+                    
+                    // Hide action buttons
+                    document.querySelector('.actions').style.display = 'none';
+                    
+                    // Reload page after 2 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = '✗ ' + (data.error || 'Erro ao aceitar proposta');
+                    messageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '✗ Erro ao processar solicitação';
+                messageDiv.style.display = 'block';
+            }
+        }
+        
+        async function rejectProposal() {
+            const reason = prompt('Por favor, informe o motivo da recusa (opcional):');
+            
+            if (reason === null) {
+                return; // User cancelled
+            }
+            
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const response = await fetch('/api/proposals/{{ proposal.id }}/reject', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reason: reason })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = 'Proposta recusada. Obrigado pelo seu feedback!';
+                    messageDiv.style.display = 'block';
+                    
+                    // Hide action buttons
+                    document.querySelector('.actions').style.display = 'none';
+                    
+                    // Reload page after 2 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = '✗ ' + (data.error || 'Erro ao recusar proposta');
+                    messageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.className = 'message error';
+                messageDiv.textContent = '✗ Erro ao processar solicitação';
+                messageDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

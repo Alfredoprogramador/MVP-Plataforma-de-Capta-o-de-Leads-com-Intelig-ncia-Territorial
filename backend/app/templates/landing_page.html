@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }}</title>
+    <meta name="description" content="{{ page.meta_description or page.title }}">
+    {% if page.meta_keywords %}
+    <meta name="keywords" content="{{ page.meta_keywords }}">
+    {% endif %}
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 20px;
+            text-align: center;
+            {% if page.hero_image_url %}
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{{ page.hero_image_url }}');
+            background-size: cover;
+            background-position: center;
+            {% endif %}
+        }
+        
+        .hero h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .hero p {
+            font-size: 1.3em;
+            margin-bottom: 30px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .content-section {
+            margin: 40px 0;
+            padding: 40px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+        
+        .content-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .form-container {
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .form-container h2 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background-color: {{ page.cta_button_color }};
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .success-message {
+            display: none;
+            padding: 20px;
+            background: #4caf50;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .error-message {
+            display: none;
+            padding: 20px;
+            background: #f44336;
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>{{ page.hero_title or page.title }}</h1>
+        <p>{{ page.hero_subtitle or 'Entre em contato e receba um orçamento personalizado!' }}</p>
+    </div>
+    
+    <div class="container">
+        {% if page.content_sections %}
+            {% for section in page.content_sections %}
+            <div class="content-section">
+                <h2>{{ section.title }}</h2>
+                <p>{{ section.content }}</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="form-container">
+            <h2>{{ page.cta_text }}</h2>
+            
+            <div id="successMessage" class="success-message">
+                Obrigado! Entraremos em contato em breve via WhatsApp.
+            </div>
+            
+            <div id="errorMessage" class="error-message">
+                Ocorreu um erro. Por favor, tente novamente.
+            </div>
+            
+            <form id="leadForm">
+                <div class="form-group">
+                    <label for="name">Nome Completo *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">WhatsApp *</label>
+                    <input type="tel" id="phone" name="phone" placeholder="(11) 99999-9999" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Endereço</label>
+                    <input type="text" id="address" name="address">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Mensagem / Detalhes</label>
+                    <textarea id="notes" name="notes" rows="4"></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    {{ page.cta_text }}
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2024 - Todos os direitos reservados</p>
+    </footer>
+    
+    <script>
+        const form = document.getElementById('leadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const successMsg = document.getElementById('successMessage');
+        const errorMsg = document.getElementById('errorMessage');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                notes: document.getElementById('notes').value,
+                neighborhood: '{{ page.neighborhood }}',
+                landing_page_id: {{ page.id }},
+                utm_source: '{{ utm_params.utm_source }}',
+                utm_medium: '{{ utm_params.utm_medium }}',
+                utm_campaign: '{{ utm_params.utm_campaign }}',
+                utm_content: '{{ utm_params.utm_content }}',
+                utm_term: '{{ utm_params.utm_term }}'
+            };
+            
+            try {
+                const response = await fetch('/api/leads', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    successMsg.style.display = 'block';
+                    form.reset();
+                    
+                    // Scroll to success message
+                    successMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '{{ page.cta_text }}';
+            }
+        });
+    </script>
+</body>
+</html>
