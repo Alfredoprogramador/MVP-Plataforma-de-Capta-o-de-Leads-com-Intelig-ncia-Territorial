@@ -2,6 +2,37 @@
 
 This document tracks security-related updates and vulnerability fixes in the project.
 
+## [1.0.2] - 2024-02-18
+
+### Security Fixes
+
+#### Critical Vulnerability Patched
+
+1. **Pillow - Out-of-Bounds Write in PSD Image Loading**
+   - **Affected Version**: 10.3.0 (and >= 10.3.0, < 12.1.1)
+   - **Patched Version**: 12.1.1
+   - **Vulnerability**: Out-of-bounds write when loading PSD images
+   - **Severity**: High
+   - **CVE**: N/A
+   - **Impact**: Potential arbitrary code execution via specially crafted PSD files
+   - **Fix**: Upgraded to 12.1.1 (major version update)
+
+### Updated Dependencies
+
+```diff
+- pillow==10.3.0
++ pillow==12.1.1
+```
+
+### Notes
+
+This is a major version update (10.x → 12.x) but Pillow maintains backward compatibility. The update includes:
+- Security fixes for out-of-bounds write vulnerability
+- Performance improvements
+- Bug fixes from versions 11.x and 12.x
+
+---
+
 ## [1.0.1] - 2024-02-18
 
 ### Security Fixes
