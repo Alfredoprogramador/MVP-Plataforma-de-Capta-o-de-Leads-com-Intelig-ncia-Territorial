@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: leads_platform
+      POSTGRES_USER: leads_user
+      POSTGRES_PASSWORD: leads_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+  
+  backend:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://leads_user:leads_password@db:5432/leads_platform
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - uploads:/tmp/uploads
+    restart: unless-stopped
+    command: >
+      sh -c "flask db upgrade &&
+             gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 app:create_app()"
+  
+  celery_worker:
+    build: .
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://leads_user:leads_password@db:5432/leads_platform
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    command: celery -A tasks worker --loglevel=info
+  
+  celery_beat:
+    build: .
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://leads_user:leads_password@db:5432/leads_platform
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    command: celery -A tasks beat --loglevel=info
+
+volumes:
+  postgres_data:
+  uploads:
