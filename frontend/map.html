@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mapa Territorial – Plataforma de Leads</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; display: flex; height: 100vh; overflow: hidden; }
+    .sidebar {
+      width: 300px; min-width: 260px; background: #fff; display: flex;
+      flex-direction: column; box-shadow: 2px 0 12px rgba(0,0,0,.1); z-index: 1000;
+    }
+    .sidebar-header {
+      background: #1e3a5f; color: #fff; padding: 16px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sidebar-header h2 { font-size: 1rem; }
+    .nav-links a {
+      color: rgba(255,255,255,.8); text-decoration: none; font-size: .82rem;
+      margin-left: 10px; padding: 4px 8px; border-radius: 4px; background: rgba(255,255,255,.12);
+    }
+    .nav-links a:hover { background: rgba(255,255,255,.25); color:#fff; }
+    .sidebar-body { flex: 1; overflow-y: auto; padding: 12px; }
+    .filter-bar { padding: 8px 0 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+    select, input { padding: 7px 10px; border: 1.5px solid #d1d5db; border-radius: 6px; font-size: .83rem; width: 100%; outline: none; }
+    select:focus { border-color: #2563eb; }
+    .territory-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px;
+      border-radius: 8px; margin-bottom: 6px; cursor: pointer;
+      border: 1.5px solid transparent; transition: all .15s;
+    }
+    .territory-item:hover { border-color: #e5e7eb; background: #f9fafb; }
+    .territory-item.active { border-color: #2563eb; background: #eff6ff; }
+    .t-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .t-info { flex: 1; min-width: 0; }
+    .t-name { font-size: .88rem; font-weight: 600; color: #1e3a5f; }
+    .t-meta { font-size: .77rem; color: #6b7280; }
+    .t-count {
+      background: #dbeafe; color: #1d4ed8; font-size: .75rem;
+      font-weight: 700; padding: 2px 8px; border-radius: 12px;
+    }
+    .leads-list { margin-top: 4px; }
+    .lead-item {
+      padding: 8px 10px; border-radius: 6px; margin-bottom: 4px;
+      border: 1px solid #e5e7eb; cursor: pointer; transition: background .15s;
+    }
+    .lead-item:hover { background: #f0f9ff; }
+    .lead-name { font-size: .85rem; font-weight: 600; }
+    .lead-meta { font-size: .77rem; color: #6b7280; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.72rem; font-weight:600; }
+    .badge-new { background:#dbeafe; color:#1d4ed8; }
+    .badge-contacted { background:#fef3c7; color:#92400e; }
+    .badge-qualified { background:#d1fae5; color:#065f46; }
+    .badge-converted { background:#ede9fe; color:#5b21b6; }
+    .badge-lost { background:#fee2e2; color:#991b1b; }
+    #map { flex: 1; }
+    .leaflet-popup-content-wrapper { border-radius: 8px; font-family: 'Segoe UI', sans-serif; }
+    .popup-name { font-weight: 700; font-size: .95rem; margin-bottom: 4px; }
+    .popup-row { font-size: .82rem; color: #374151; margin-bottom: 2px; }
+    .popup-score { font-weight:700; }
+    @media(max-width:640px){ .sidebar{width:100%; height:250px; min-width:0;} body{flex-direction:column;} #map{min-height:400px;} }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h2>🗺️ Territórios</h2>
+    <div class="nav-links">
+      <a href="dashboard.html">📊</a>
+      <a href="index.html">🏠</a>
+    </div>
+  </div>
+  <div class="sidebar-body">
+    <div class="filter-bar">
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="">Todos os status</option>
+        <option value="new">Novo</option>
+        <option value="contacted">Contactado</option>
+        <option value="qualified">Qualificado</option>
+        <option value="converted">Convertido</option>
+        <option value="lost">Perdido</option>
+      </select>
+    </div>
+    <div id="territoriesList"><p style="color:#9ca3af;font-size:.85rem;text-align:center;padding:20px;">Carregando...</p></div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+const API = 'http://localhost:8000';
+
+const map = L.map('map', { center: [-15.78, -47.93], zoom: 5 });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  maxZoom: 19,
+}).addTo(map);
+
+const STATUS_COLORS = {
+  new: '#2563eb', contacted: '#f59e0b', qualified: '#10b981',
+  converted: '#8b5cf6', lost: '#ef4444',
+};
+
+const STATUS_LABELS = {
+  new: 'Novo', contacted: 'Contactado', qualified: 'Qualificado',
+  converted: 'Convertido', lost: 'Perdido',
+};
+
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>`,
+    iconSize: [12, 12],
+    iconAnchor: [6, 6],
+  });
+}
+
+let territories = [];
+let leads = [];
+let territoryLayers = {};
+let leadMarkers = [];
+let selectedTerritory = null;
+
+async function loadData() {
+  [territories, leads] = await Promise.all([
+    fetch(`${API}/api/territories/`).then(r => r.json()),
+    fetch(`${API}/api/leads/?limit=500`).then(r => r.json()),
+  ]);
+  renderTerritories();
+  renderLeads();
+}
+
+function renderTerritories() {
+  // Clear existing
+  Object.values(territoryLayers).forEach(l => map.removeLayer(l));
+  territoryLayers = {};
+
+  const list = document.getElementById('territoriesList');
+  list.innerHTML = '';
+
+  territories.forEach(t => {
+    if (t.polygon) {
+      try {
+        const coords = JSON.parse(t.polygon); // [[lat,lng],...]
+        const layer = L.polygon(coords, {
+          color: t.color || '#2563eb',
+          fillColor: t.color || '#2563eb',
+          fillOpacity: 0.15,
+          weight: 2,
+        }).addTo(map);
+        layer.bindTooltip(t.name, { permanent: false });
+        layer.on('click', () => selectTerritory(t.id));
+        territoryLayers[t.id] = layer;
+      } catch (e) { /* ignore */ }
+    }
+
+    const leadsInT = leads.filter(l => l.territory_id === t.id);
+    const item = document.createElement('div');
+    item.className = 'territory-item';
+    item.id = `t-${t.id}`;
+    item.innerHTML = `
+      <div class="t-dot" style="background:${t.color||'#2563eb'}"></div>
+      <div class="t-info">
+        <div class="t-name">${t.name}</div>
+        <div class="t-meta">${t.responsible_agent || 'Sem responsável'}</div>
+      </div>
+      <span class="t-count">${leadsInT.length}</span>`;
+    item.addEventListener('click', () => selectTerritory(t.id));
+    list.appendChild(item);
+  });
+
+  // Sem território
+  const noTerritory = leads.filter(l => !l.territory_id);
+  if (noTerritory.length) {
+    const item = document.createElement('div');
+    item.className = 'territory-item';
+    item.id = 't-null';
+    item.innerHTML = `
+      <div class="t-dot" style="background:#9ca3af"></div>
+      <div class="t-info"><div class="t-name">Sem Território</div><div class="t-meta">Leads não mapeados</div></div>
+      <span class="t-count" style="background:#f3f4f6;color:#6b7280;">${noTerritory.length}</span>`;
+    item.addEventListener('click', () => selectTerritory(null));
+    list.appendChild(item);
+  }
+}
+
+function renderLeads(filter = {}) {
+  leadMarkers.forEach(m => map.removeLayer(m));
+  leadMarkers = [];
+
+  const statusFilter = filter.status || document.getElementById('filterStatus').value;
+
+  leads.forEach(l => {
+    if (statusFilter && l.status !== statusFilter) return;
+    if (selectedTerritory !== undefined && selectedTerritory !== null && l.territory_id !== selectedTerritory) return;
+    if (!l.latitude || !l.longitude) return;
+
+    const color = STATUS_COLORS[l.status] || '#6b7280';
+    const marker = L.marker([l.latitude, l.longitude], { icon: makeIcon(color) });
+    marker.bindPopup(`
+      <div class="popup-name">${l.name}</div>
+      <div class="popup-row">📍 ${[l.city, l.state].filter(Boolean).join(', ') || '–'}</div>
+      <div class="popup-row">📱 ${l.phone || '–'}</div>
+      <div class="popup-row">📧 ${l.email || '–'}</div>
+      <div class="popup-row">Status: <strong>${STATUS_LABELS[l.status] || l.status}</strong></div>
+      ${l.ai_score != null ? `<div class="popup-row">Score IA: <span class="popup-score">${l.ai_score}/100</span></div>` : ''}
+      ${l.territory ? `<div class="popup-row">Território: ${l.territory.name}</div>` : ''}
+    `);
+    marker.addTo(map);
+    leadMarkers.push(marker);
+  });
+}
+
+function selectTerritory(id) {
+  selectedTerritory = id;
+
+  // Update sidebar highlight
+  document.querySelectorAll('.territory-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(`t-${id}`);
+  if (el) el.classList.add('active');
+
+  // Zoom to territory polygon
+  if (id && territoryLayers[id]) {
+    map.fitBounds(territoryLayers[id].getBounds(), { padding: [30, 30] });
+  }
+
+  renderLeads();
+
+  // Show leads list in sidebar
+  const leadsInT = id === null
+    ? leads.filter(l => !l.territory_id)
+    : leads.filter(l => l.territory_id === id);
+
+  const existing = document.getElementById('leadsSubList');
+  if (existing) existing.remove();
+
+  if (leadsInT.length) {
+    const container = document.createElement('div');
+    container.id = 'leadsSubList';
+    container.className = 'leads-list';
+    container.innerHTML = `<div style="font-size:.8rem;font-weight:600;color:#6b7280;padding:8px 0 4px;">${leadsInT.length} lead(s)</div>`;
+    leadsInT.slice(0, 20).forEach(l => {
+      const d = document.createElement('div');
+      d.className = 'lead-item';
+      d.innerHTML = `
+        <div class="lead-name">${l.name}</div>
+        <div class="lead-meta">${l.city || '–'} · <span class="badge badge-${l.status}">${STATUS_LABELS[l.status]||l.status}</span></div>`;
+      d.addEventListener('click', () => {
+        if (l.latitude && l.longitude) {
+          map.setView([l.latitude, l.longitude], 13);
+          const marker = leadMarkers.find(m => {
+            const ll = m.getLatLng();
+            return Math.abs(ll.lat - l.latitude) < 0.0001 && Math.abs(ll.lng - l.longitude) < 0.0001;
+          });
+          if (marker) marker.openPopup();
+        }
+      });
+      container.appendChild(d);
+    });
+    document.getElementById('territoriesList').appendChild(container);
+  }
+}
+
+function applyFilters() {
+  renderLeads();
+}
+
+loadData();
+</script>
+</body>
+</html>

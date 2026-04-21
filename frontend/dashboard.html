@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – Plataforma de Leads</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+      background: #1e3a5f; color: #fff; display: flex; flex-direction: column; padding: 24px 0;
+      z-index: 100;
+    }
+    .sidebar .logo { padding: 0 20px 24px; font-size: 1rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .sidebar a {
+      display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+      color: rgba(255,255,255,.8); text-decoration: none; font-size: .9rem;
+      transition: background .2s;
+    }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,.12); color: #fff; }
+    .main { margin-left: 220px; padding: 28px; min-height: 100vh; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.5rem; color: #1e3a5f; }
+    .btn { padding: 9px 18px; border-radius: 7px; border: none; cursor: pointer; font-size: .9rem; font-weight: 600; transition: background .2s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-sm { padding: 5px 12px; font-size: .8rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .stat-card .label { font-size: .8rem; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; margin: 4px 0; }
+    .stat-card.blue .value { color: #2563eb; }
+    .stat-card.green .value { color: #10b981; }
+    .stat-card.amber .value { color: #f59e0b; }
+    .stat-card.purple .value { color: #8b5cf6; }
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .chart-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .chart-card h3 { font-size: .95rem; color: #374151; margin-bottom: 14px; }
+    .chart-card canvas { max-height: 220px; }
+    .table-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .table-header h3 { font-size: .95rem; color: #374151; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th { text-align: left; padding: 10px 12px; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: .8rem; text-transform: uppercase; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tr:hover td { background: #f9fafb; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600;
+    }
+    .badge-new { background: #dbeafe; color: #1d4ed8; }
+    .badge-contacted { background: #fef3c7; color: #92400e; }
+    .badge-qualified { background: #d1fae5; color: #065f46; }
+    .badge-converted { background: #ede9fe; color: #5b21b6; }
+    .badge-lost { background: #fee2e2; color: #991b1b; }
+    .actions { display: flex; gap: 6px; }
+    /* Modal */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; align-items:center; justify-content:center; }
+    .modal.open { display:flex; }
+    .modal-box { background:#fff; border-radius:12px; padding:28px; width:480px; max-width:95vw; max-height:90vh; overflow-y:auto; }
+    .modal-box h2 { font-size:1.1rem; margin-bottom:18px; color:#1e3a5f; }
+    .form-group { margin-bottom:14px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    label { display:block; font-size:.82rem; font-weight:600; color:#374151; margin-bottom:4px; }
+    input,select,textarea { width:100%; padding:9px 12px; border:1.5px solid #d1d5db; border-radius:7px; font-size:.9rem; outline:none; }
+    input:focus,select:focus,textarea:focus { border-color:#2563eb; }
+    textarea { min-height:70px; resize:vertical; }
+    .modal-actions { display:flex; gap:10px; margin-top:18px; justify-content:flex-end; }
+    .btn-secondary { background:#f3f4f6; color:#374151; }
+    .btn-secondary:hover { background:#e5e7eb; }
+    #toast { position:fixed; bottom:24px; right:24px; background:#1e3a5f; color:#fff; padding:12px 20px; border-radius:8px; font-size:.9rem; display:none; z-index:300; }
+    .score-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.78rem; font-weight:700; }
+    @media(max-width:768px){ .stats-grid{grid-template-columns:1fr 1fr;} .charts-row{grid-template-columns:1fr;} .main{margin-left:0;} .sidebar{display:none;} }
+  </style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="logo">🎯 LeadPlatform</div>
+  <a href="index.html">🏠 Início</a>
+  <a href="dashboard.html" class="active">📊 Dashboard</a>
+  <a href="map.html">🗺️ Mapa Territorial</a>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>📊 Dashboard</h1>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-success" onclick="openModal('addLeadModal')">+ Novo Lead</button>
+      <a href="map.html" class="btn btn-primary">🗺️ Ver Mapa</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card blue"><div class="label">Total de Leads</div><div class="value" id="statTotal">–</div></div>
+    <div class="stat-card green"><div class="label">Novos Hoje</div><div class="value" id="statToday">–</div></div>
+    <div class="stat-card amber"><div class="label">Qualificados</div><div class="value" id="statQualified">–</div></div>
+    <div class="stat-card purple"><div class="label">Convertidos</div><div class="value" id="statConverted">–</div></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <h3>Leads por Status</h3>
+      <canvas id="statusChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Leads por Território</h3>
+      <canvas id="territoryChart"></canvas>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Leads Recentes</h3>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="filterStatus" onchange="loadLeads()" style="width:auto;padding:7px 10px;font-size:.83rem;">
+          <option value="">Todos os status</option>
+          <option value="new">Novo</option>
+          <option value="contacted">Contactado</option>
+          <option value="qualified">Qualificado</option>
+          <option value="converted">Convertido</option>
+          <option value="lost">Perdido</option>
+        </select>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th><th>E-mail / Tel</th><th>Cidade</th><th>Território</th>
+          <th>Status</th><th>Score IA</th><th>Data</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="leadsTable"><tr><td colspan="8" style="text-align:center;padding:20px;color:#9ca3af;">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Add Lead Modal -->
+<div class="modal" id="addLeadModal">
+  <div class="modal-box">
+    <h2>➕ Novo Lead</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Nome *</label><input type="text" id="nl_name" placeholder="Nome completo" /></div>
+      <div class="form-group"><label>Telefone</label><input type="tel" id="nl_phone" placeholder="+55 11 99999-9999" /></div>
+    </div>
+    <div class="form-group"><label>E-mail</label><input type="email" id="nl_email" /></div>
+    <div class="form-group"><label>Endereço</label><input type="text" id="nl_address" /></div>
+    <div class="form-row">
+      <div class="form-group"><label>Cidade</label><input type="text" id="nl_city" /></div>
+      <div class="form-group"><label>Estado</label>
+        <select id="nl_state">
+          <option value="">Selecione</option>
+          <option>SP</option><option>RJ</option><option>MG</option><option>RS</option>
+          <option>BA</option><option>PR</option><option>SC</option><option>GO</option>
+          <option>CE</option><option>PE</option><option>AM</option><option>PA</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Origem</label>
+      <select id="nl_source"><option value="manual">Manual</option><option value="web_form">Formulário Web</option><option value="whatsapp">WhatsApp</option></select>
+    </div>
+    <div class="form-group"><label>Observações</label><textarea id="nl_notes"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addLeadModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitNewLead()">Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- WhatsApp Modal -->
+<div class="modal" id="waModal">
+  <div class="modal-box">
+    <h2>💬 Enviar WhatsApp</h2>
+    <div class="form-group"><label>Número</label><input type="text" id="wa_number" placeholder="whatsapp:+5511999999999" /></div>
+    <div class="form-group"><label>Mensagem</label><textarea id="wa_message" style="min-height:120px;"></textarea></div>
+    <div id="wa_ai_hint" style="font-size:.8rem;color:#6b7280;margin-bottom:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('waModal')">Cancelar</button>
+      <button class="btn btn-success" onclick="generateAIMessage()">🤖 Gerar com IA</button>
+      <button class="btn btn-primary" onclick="sendWhatsApp()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000';
+let currentLeadId = null;
+let statusChart, territoryChart;
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#dc2626' : '#1e3a5f';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3500);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function statusLabel(s) {
+  const m = { new:'Novo', contacted:'Contactado', qualified:'Qualificado', converted:'Convertido', lost:'Perdido' };
+  return m[s] || s;
+}
+function statusClass(s) {
+  const m = { new:'badge-new', contacted:'badge-contacted', qualified:'badge-qualified', converted:'badge-converted', lost:'badge-lost' };
+  return m[s] || '';
+}
+function scoreColor(n) {
+  if (n === null || n === undefined) return '';
+  if (n >= 70) return 'background:#d1fae5;color:#065f46';
+  if (n >= 40) return 'background:#fef3c7;color:#92400e';
+  return 'background:#fee2e2;color:#991b1b';
+}
+
+async function loadStats() {
+  const r = await fetch(`${API}/api/dashboard/stats`);
+  const d = await r.json();
+  document.getElementById('statTotal').textContent = d.total_leads;
+  document.getElementById('statToday').textContent = d.new_today;
+  document.getElementById('statQualified').textContent = d.qualified;
+  document.getElementById('statConverted').textContent = d.converted;
+}
+
+async function loadCharts() {
+  const [s, t] = await Promise.all([
+    fetch(`${API}/api/dashboard/leads-by-status`).then(r=>r.json()),
+    fetch(`${API}/api/dashboard/leads-by-territory`).then(r=>r.json()),
+  ]);
+
+  const COLORS = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'];
+
+  if (statusChart) statusChart.destroy();
+  statusChart = new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: s.map(x => statusLabel(x.status)),
+      datasets: [{ data: s.map(x=>x.count), backgroundColor: COLORS }]
+    },
+    options: { plugins: { legend: { position:'bottom' } }, cutout:'65%' }
+  });
+
+  if (territoryChart) territoryChart.destroy();
+  territoryChart = new Chart(document.getElementById('territoryChart'), {
+    type: 'bar',
+    data: {
+      labels: t.map(x=>x.territory_name),
+      datasets: [{ label:'Leads', data: t.map(x=>x.count), backgroundColor: COLORS }]
+    },
+    options: { plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, ticks:{stepSize:1} } } }
+  });
+}
+
+async function loadLeads() {
+  const status = document.getElementById('filterStatus').value;
+  const url = `${API}/api/leads/?limit=50${status ? '&status='+status : ''}`;
+  const leads = await fetch(url).then(r=>r.json());
+  const tbody = document.getElementById('leadsTable');
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#9ca3af;">Nenhum lead encontrado</td></tr>';
+    return;
+  }
+  tbody.innerHTML = leads.map(l => `
+    <tr>
+      <td><strong>${l.name}</strong></td>
+      <td><small>${l.email||'–'}<br>${l.phone||''}</small></td>
+      <td>${l.city||'–'}${l.state?', '+l.state:''}</td>
+      <td>${l.territory?.name||'<span style="color:#9ca3af">–</span>'}</td>
+      <td><span class="badge ${statusClass(l.status)}">${statusLabel(l.status)}</span></td>
+      <td>${l.ai_score!=null?`<span class="score-badge" style="${scoreColor(l.ai_score)}">${l.ai_score}</span>`:'–'}</td>
+      <td><small>${new Date(l.created_at).toLocaleDateString('pt-BR')}</small></td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-primary btn-sm" onclick="qualifyLead(${l.id})">🤖 IA</button>
+          <button class="btn btn-success btn-sm" onclick="openWA(${l.id},'${(l.phone||'').replace(/\D/g,'')}','${l.name}')">💬</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function qualifyLead(id) {
+  showToast('Qualificando com IA...');
+  const r = await fetch(`${API}/api/leads/${id}/qualify`, { method:'POST' });
+  const d = await r.json();
+  showToast(`Score: ${d.score} – ${d.notes}`);
+  loadLeads(); loadStats();
+}
+
+function openWA(leadId, phone, name) {
+  currentLeadId = leadId;
+  document.getElementById('wa_number').value = phone ? `+55${phone}` : '';
+  document.getElementById('wa_message').value = '';
+  document.getElementById('wa_ai_hint').textContent = `Lead: ${name}`;
+  openModal('waModal');
+}
+
+async function generateAIMessage() {
+  if (!currentLeadId) return;
+  document.getElementById('wa_ai_hint').textContent = 'Gerando mensagem...';
+  const r = await fetch(`${API}/api/ai/generate-message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ lead_id: currentLeadId }),
+  });
+  const d = await r.json();
+  document.getElementById('wa_message').value = d.message;
+  document.getElementById('wa_ai_hint').textContent = 'Mensagem gerada por IA ✓';
+}
+
+async function sendWhatsApp() {
+  const to = document.getElementById('wa_number').value.trim();
+  const msg = document.getElementById('wa_message').value.trim();
+  if (!to || !msg) { showToast('Preencha o número e a mensagem', true); return; }
+  const r = await fetch(`${API}/api/whatsapp/send`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ to_number: to, message: msg, lead_id: currentLeadId }),
+  });
+  if (r.ok) {
+    showToast('Mensagem enviada ✓');
+    closeModal('waModal');
+  } else {
+    const e = await r.json();
+    showToast(e.detail || 'Erro ao enviar', true);
+  }
+}
+
+async function submitNewLead() {
+  const name = document.getElementById('nl_name').value.trim();
+  if (!name) { showToast('Nome é obrigatório', true); return; }
+  const body = {
+    name, email: document.getElementById('nl_email').value||null,
+    phone: document.getElementById('nl_phone').value||null,
+    address: document.getElementById('nl_address').value||null,
+    city: document.getElementById('nl_city').value||null,
+    state: document.getElementById('nl_state').value||null,
+    notes: document.getElementById('nl_notes').value||null,
+    source: document.getElementById('nl_source').value,
+  };
+  const r = await fetch(`${API}/api/leads/`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  if (r.ok) {
+    showToast('Lead criado ✓');
+    closeModal('addLeadModal');
+    loadLeads(); loadStats(); loadCharts();
+  } else {
+    const e = await r.json();
+    showToast(e.detail||'Erro ao criar lead', true);
+  }
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+async function init() {
+  await Promise.all([loadStats(), loadCharts(), loadLeads()]);
+}
+init();
+setInterval(() => { loadStats(); loadLeads(); }, 30000);
+</script>
+</body>
+</html>
