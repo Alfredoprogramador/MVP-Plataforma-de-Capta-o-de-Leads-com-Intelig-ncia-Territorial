@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login – Plataforma de Leads</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .card {
+      background: #fff; border-radius: 16px; padding: 44px 40px;
+      width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    }
+    .logo { text-align: center; margin-bottom: 28px; }
+    .logo-icon { font-size: 2.8rem; display: block; margin-bottom: 8px; }
+    .logo h1 { font-size: 1.3rem; color: #1e3a5f; }
+    .logo p { font-size: .82rem; color: #6b7280; margin-top: 4px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: .83rem; font-weight: 600; color: #374151; margin-bottom: 5px; }
+    input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid #d1d5db;
+      border-radius: 8px; font-size: .95rem; outline: none; transition: border-color .2s;
+    }
+    input:focus { border-color: #2563eb; }
+    .btn {
+      width: 100%; padding: 13px; background: #2563eb; color: #fff;
+      border: none; border-radius: 8px; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background .2s; margin-top: 4px;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #93c5fd; cursor: not-allowed; }
+    #error {
+      background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;
+      border-radius: 7px; padding: 10px 14px; font-size: .87rem; margin-top: 14px;
+      display: none;
+    }
+    .hint { text-align: center; font-size: .78rem; color: #9ca3af; margin-top: 20px; }
+    .hint strong { color: #6b7280; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <span class="logo-icon">🎯</span>
+    <h1>Plataforma de Leads</h1>
+    <p>Inteligência Territorial & IA</p>
+  </div>
+  <form id="loginForm">
+    <div class="form-group">
+      <label for="username">Usuário</label>
+      <input type="text" id="username" autocomplete="username" placeholder="admin" required />
+    </div>
+    <div class="form-group">
+      <label for="password">Senha</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" required />
+    </div>
+    <button type="submit" class="btn" id="loginBtn">Entrar</button>
+    <div id="error"></div>
+  </form>
+  <div class="hint">Credenciais padrão: <strong>admin / admin123</strong></div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+
+// Redirect if already logged in
+if (localStorage.getItem('lead_token')) {
+  window.location.href = 'dashboard.html';
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const errEl = document.getElementById('error');
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+  errEl.style.display = 'none';
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      localStorage.setItem('lead_token', data.access_token);
+      localStorage.setItem('lead_user', JSON.stringify({
+        username: data.username,
+        full_name: data.full_name,
+        is_admin: data.is_admin,
+      }));
+      window.location.href = 'dashboard.html';
+    } else {
+      const err = await res.json();
+      errEl.textContent = '❌ ' + (err.detail || 'Usuário ou senha inválidos');
+      errEl.style.display = 'block';
+    }
+  } catch {
+    errEl.textContent = '❌ Erro de conexão com o servidor';
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Entrar';
+});
+</script>
+</body>
+</html>

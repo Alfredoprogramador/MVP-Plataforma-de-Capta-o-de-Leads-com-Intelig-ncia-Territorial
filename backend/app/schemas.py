@@ -164,3 +164,75 @@ class LeadsByTerritory(BaseModel):
 class RecentActivity(BaseModel):
     leads: List[LeadOut]
     messages: List[WhatsAppMessageOut]
+
+
+# ── Auth ───────────────────────────────────────────────────────────────────────
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    username: str
+    full_name: Optional[str] = None
+    is_admin: bool
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    is_active: bool
+    is_admin: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    is_admin: bool = False
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+# ── Bulk actions ───────────────────────────────────────────────────────────────
+
+class BulkAction(BaseModel):
+    ids: List[int]
+    action: str  # "delete" | "qualify" | "set_status"
+    status: Optional[LeadStatus] = None
+
+
+class BulkResult(BaseModel):
+    processed: int
+    failed: int
+    errors: List[str] = []
+
+
+# ── Lead Notes ─────────────────────────────────────────────────────────────────
+
+class NoteCreate(BaseModel):
+    content: str
+    author: Optional[str] = "admin"
+
+
+class NoteOut(BaseModel):
+    id: int
+    lead_id: int
+    author: str
+    content: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+

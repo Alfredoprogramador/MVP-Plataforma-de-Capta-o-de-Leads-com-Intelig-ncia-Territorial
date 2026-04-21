@@ -18,6 +18,7 @@ def get_leads(
     status: Optional[str] = None,
     territory_id: Optional[int] = None,
     source: Optional[str] = None,
+    search: Optional[str] = None,
 ) -> List[Lead]:
     query = db.query(Lead)
     if status:
@@ -26,6 +27,18 @@ def get_leads(
         query = query.filter(Lead.territory_id == territory_id)
     if source:
         query = query.filter(Lead.source == source)
+    if search:
+        term = f"%{search}%"
+        from sqlalchemy import or_
+        query = query.filter(
+            or_(
+                Lead.name.ilike(term),
+                Lead.email.ilike(term),
+                Lead.phone.ilike(term),
+                Lead.city.ilike(term),
+                Lead.address.ilike(term),
+            )
+        )
     return query.order_by(Lead.created_at.desc()).offset(skip).limit(limit).all()
 
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, Integer, String, Float, Text, DateTime, ForeignKey, Enum as SAEnum, Boolean
 from sqlalchemy.orm import relationship
 import enum
 
@@ -23,6 +23,31 @@ class LeadSource(str, enum.Enum):
 class MessageDirection(str, enum.Enum):
     inbound = "inbound"
     outbound = "outbound"
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(80), unique=True, nullable=False, index=True)
+    email = Column(String(200), unique=True, nullable=True)
+    full_name = Column(String(150), nullable=True)
+    hashed_password = Column(String(200), nullable=False)
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class LeadNote(Base):
+    __tablename__ = "lead_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lead_id = Column(Integer, ForeignKey("leads.id"), nullable=False)
+    author = Column(String(150), default="admin")
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    lead = relationship("Lead", back_populates="timeline")
 
 
 class Territory(Base):
@@ -70,6 +95,7 @@ class Lead(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     messages = relationship("WhatsAppMessage", back_populates="lead")
+    timeline = relationship("LeadNote", back_populates="lead", order_by="LeadNote.created_at")
 
 
 class WhatsAppMessage(Base):

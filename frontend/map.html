@@ -70,6 +70,7 @@
   <div class="sidebar-header">
     <h2>🗺️ Territórios</h2>
     <div class="nav-links">
+      <a href="settings.html">⚙️</a>
       <a href="dashboard.html">📊</a>
       <a href="index.html">🏠</a>
     </div>
@@ -93,6 +94,14 @@
 
 <script>
 const API = 'http://localhost:8000';
+
+// Auth guard
+const token = localStorage.getItem('lead_token');
+if (!token) window.location.href = 'login.html';
+const user = JSON.parse(localStorage.getItem('lead_user') || '{}');
+function authHeaders() {
+  return { 'Authorization': 'Bearer ' + token };
+}
 
 const map = L.map('map', { center: [-15.78, -47.93], zoom: 5 });
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -127,8 +136,8 @@ let selectedTerritory = null;
 
 async function loadData() {
   [territories, leads] = await Promise.all([
-    fetch(`${API}/api/territories/`).then(r => r.json()),
-    fetch(`${API}/api/leads/?limit=500`).then(r => r.json()),
+    fetch(`${API}/api/territories/`, { headers: authHeaders() }).then(r => r.json()),
+    fetch(`${API}/api/leads/?limit=500`, { headers: authHeaders() }).then(r => r.json()),
   ]);
   renderTerritories();
   renderLeads();

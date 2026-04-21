@@ -7,8 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .database import engine, SessionLocal
-from .models import Base, Territory
-from .routers import leads, territories, whatsapp, ai_agent, dashboard
+from .models import Base, Territory, User
+from .routers import leads, territories, whatsapp, ai_agent, dashboard, auth as auth_router
+from .services.auth_service import create_user, get_user_by_username
 
 
 SEED_TERRITORIES = [
@@ -74,6 +75,10 @@ async def lifespan(app: FastAPI):
             for t in SEED_TERRITORIES:
                 db.add(Territory(**t))
             db.commit()
+        # Seed default admin user
+        if not get_user_by_username(db, "admin"):
+            create_user(db, username="admin", password="admin123",
+                        full_name="Administrador", email="admin@leadplatform.com", is_admin=True)
     finally:
         db.close()
     yield
@@ -101,6 +106,7 @@ app.include_router(territories.router)
 app.include_router(whatsapp.router)
 app.include_router(ai_agent.router)
 app.include_router(dashboard.router)
+app.include_router(auth_router.router)
 
 
 @app.get("/health")
