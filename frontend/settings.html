@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configurações – Plataforma de Leads</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+      background: #1e3a5f; color: #fff; display: flex; flex-direction: column; padding: 24px 0; z-index: 100;
+    }
+    .sidebar .logo { padding: 0 20px 24px; font-size: 1rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .sidebar a {
+      display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+      color: rgba(255,255,255,.8); text-decoration: none; font-size: .9rem; transition: background .2s;
+    }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,.12); color: #fff; }
+    .sidebar-bottom { margin-top: auto; padding: 12px 20px; border-top: 1px solid rgba(255,255,255,.1); }
+    .user-info { font-size: .8rem; color: rgba(255,255,255,.7); margin-bottom: 8px; }
+    .btn-logout { background: rgba(239,68,68,.2); color: #fca5a5; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; width: 100%; }
+    .btn-logout:hover { background: rgba(239,68,68,.4); }
+    .main { margin-left: 220px; padding: 28px; }
+    .page-header { display: flex; align-items: center; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.5rem; color: #1e3a5f; }
+    .tabs { display: flex; gap: 4px; border-bottom: 2px solid #e5e7eb; margin-bottom: 24px; }
+    .tab { padding: 9px 18px; cursor: pointer; font-size: .9rem; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+    .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: #fff; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 16px; }
+    .card h2 { font-size: 1rem; color: #1e3a5f; margin-bottom: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { display: block; font-size: .83rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 9px 12px; border: 1.5px solid #d1d5db; border-radius: 7px; font-size: .9rem; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: #2563eb; }
+    textarea { min-height: 80px; resize: vertical; }
+    .btn { padding: 9px 20px; border-radius: 7px; border: none; cursor: pointer; font-size: .88rem; font-weight: 600; transition: background .2s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-sm { padding: 5px 12px; font-size: .8rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th { text-align: left; padding: 10px 12px; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: .8rem; text-transform: uppercase; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tr:hover td { background: #f9fafb; }
+    .color-swatch { width: 18px; height: 18px; border-radius: 50%; display: inline-block; vertical-align: middle; border: 1px solid rgba(0,0,0,.1); }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: center; justify-content: center; }
+    .modal.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 12px; padding: 28px; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal-box h2 { font-size: 1rem; margin-bottom: 18px; color: #1e3a5f; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; }
+    #toast { position: fixed; bottom: 24px; right: 24px; background: #1e3a5f; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: .9rem; display: none; z-index: 300; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: .75rem; font-weight: 600; }
+    .badge-admin { background: #ede9fe; color: #5b21b6; }
+    .badge-user { background: #dbeafe; color: #1d4ed8; }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; font-size: .85rem; color: #1e40af; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="logo">🎯 LeadPlatform</div>
+  <a href="index.html">🏠 Início</a>
+  <a href="dashboard.html">📊 Dashboard</a>
+  <a href="map.html">🗺️ Mapa Territorial</a>
+  <a href="settings.html" class="active">⚙️ Configurações</a>
+  <div class="sidebar-bottom">
+    <div class="user-info" id="userDisplay">–</div>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>⚙️ Configurações</h1>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('territories')">🗺️ Territórios</div>
+    <div class="tab" onclick="switchTab('users')">👥 Usuários</div>
+    <div class="tab" onclick="switchTab('password')">🔑 Senha</div>
+    <div class="tab" onclick="switchTab('info')">ℹ️ Sistema</div>
+  </div>
+
+  <!-- Territories tab -->
+  <div class="tab-content active" id="tab-territories">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;">Territórios Cadastrados</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('territoryModal'); resetTerritoryForm()">+ Novo Território</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Cor</th><th>Nome</th><th>Responsável</th><th>Leads</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="territoriesTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Users tab -->
+  <div class="tab-content" id="tab-users">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="margin:0;">Usuários do Sistema</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('userModal')">+ Novo Usuário</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Usuário</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th></tr>
+        </thead>
+        <tbody id="usersTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Password tab -->
+  <div class="tab-content" id="tab-password">
+    <div class="card" style="max-width:440px;">
+      <h2>Alterar Senha</h2>
+      <div class="form-group"><label>Senha Atual</label><input type="password" id="cp_current" /></div>
+      <div class="form-group"><label>Nova Senha</label><input type="password" id="cp_new" /></div>
+      <div class="form-group"><label>Confirmar Nova Senha</label><input type="password" id="cp_confirm" /></div>
+      <button class="btn btn-primary" onclick="changePassword()">Salvar Nova Senha</button>
+    </div>
+  </div>
+
+  <!-- Info tab -->
+  <div class="tab-content" id="tab-info">
+    <div class="card" style="max-width:560px;">
+      <h2>Informações do Sistema</h2>
+      <div class="info-box">
+        ℹ️ Configure as chaves de API editando o arquivo <strong>.env</strong> na raiz do projeto e reiniciando o servidor.
+      </div>
+      <table>
+        <tbody>
+          <tr><td><strong>Versão</strong></td><td>1.0.0 MVP</td></tr>
+          <tr><td><strong>Banco de Dados</strong></td><td>SQLite (local)</td></tr>
+          <tr><td><strong>API Docs</strong></td><td><a href="http://localhost:8000/docs" target="_blank">http://localhost:8000/docs</a></td></tr>
+          <tr><td><strong>Integração IA</strong></td><td>OpenAI GPT-4o-mini</td></tr>
+          <tr><td><strong>WhatsApp</strong></td><td>Twilio WhatsApp Business API</td></tr>
+          <tr><td><strong>Geocodificação</strong></td><td>OpenStreetMap / Nominatim</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="max-width:560px;">
+      <h2>Variáveis de Ambiente</h2>
+      <div class="info-box">
+        Edite o arquivo <strong>.env</strong> e preencha:
+      </div>
+      <pre style="background:#f1f5f9;padding:14px;border-radius:8px;font-size:.82rem;overflow-x:auto;">
+OPENAI_API_KEY=sk-...
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+SECRET_KEY=sua_chave_secreta_longa
+      </pre>
+    </div>
+  </div>
+</main>
+
+<!-- Territory Modal -->
+<div class="modal" id="territoryModal">
+  <div class="modal-box">
+    <h2 id="territoryModalTitle">Novo Território</h2>
+    <input type="hidden" id="t_id" />
+    <div class="form-group"><label>Nome *</label><input type="text" id="t_name" /></div>
+    <div class="form-group"><label>Descrição</label><textarea id="t_description"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Cor</label><input type="color" id="t_color" value="#3B82F6" /></div>
+      <div class="form-group"><label>Responsável</label><input type="text" id="t_agent" placeholder="Nome do agente" /></div>
+    </div>
+    <div class="form-group">
+      <label>Polígono (JSON – [[lat,lng],...]) <small style="color:#9ca3af;font-weight:normal;">Opcional</small></label>
+      <textarea id="t_polygon" placeholder='[[-23.35,-46.82],[-23.35,-46.36],[-23.80,-46.36],[-23.80,-46.82]]'></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('territoryModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTerritory()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal" id="userModal">
+  <div class="modal-box">
+    <h2>Novo Usuário</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Usuário *</label><input type="text" id="u_username" /></div>
+      <div class="form-group"><label>Senha *</label><input type="password" id="u_password" /></div>
+    </div>
+    <div class="form-group"><label>Nome completo</label><input type="text" id="u_fullname" /></div>
+    <div class="form-group"><label>E-mail</label><input type="email" id="u_email" /></div>
+    <div class="form-group"><label>Perfil</label>
+      <select id="u_role">
+        <option value="false">Usuário</option>
+        <option value="true">Administrador</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('userModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser()">Criar Usuário</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000';
+
+// Auth guard
+const token = localStorage.getItem('lead_token');
+if (!token) window.location.href = 'login.html';
+const user = JSON.parse(localStorage.getItem('lead_user') || '{}');
+document.getElementById('userDisplay').textContent = user.full_name || user.username || '';
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+}
+
+function logout() {
+  localStorage.removeItem('lead_token');
+  localStorage.removeItem('lead_user');
+  window.location.href = 'login.html';
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#dc2626' : '#1e3a5f';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3500);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const tabs = ['territories','users','password','info'];
+  const idx = tabs.indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'territories') loadTerritories();
+  if (name === 'users') loadUsers();
+}
+
+// ── Territories ────────────────────────────────────────────────────────────────
+
+async function loadTerritories() {
+  const res = await fetch(`${API}/api/territories/`, { headers: authHeaders() });
+  const territories = await res.json();
+  const tbody = document.getElementById('territoriesTable');
+  tbody.innerHTML = territories.map(t => `
+    <tr>
+      <td><span class="color-swatch" style="background:${t.color||'#3B82F6'}"></span></td>
+      <td><strong>${t.name}</strong><br><small style="color:#6b7280">${t.description||''}</small></td>
+      <td>${t.responsible_agent||'–'}</td>
+      <td><strong>${t.lead_count||0}</strong></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-secondary btn-sm" onclick="editTerritory(${t.id})">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTerritory(${t.id},'${t.name}')">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+
+function resetTerritoryForm() {
+  document.getElementById('t_id').value = '';
+  document.getElementById('t_name').value = '';
+  document.getElementById('t_description').value = '';
+  document.getElementById('t_color').value = '#3B82F6';
+  document.getElementById('t_agent').value = '';
+  document.getElementById('t_polygon').value = '';
+  document.getElementById('territoryModalTitle').textContent = 'Novo Território';
+}
+
+async function editTerritory(id) {
+  const res = await fetch(`${API}/api/territories/${id}`, { headers: authHeaders() });
+  const t = await res.json();
+  document.getElementById('t_id').value = t.id;
+  document.getElementById('t_name').value = t.name;
+  document.getElementById('t_description').value = t.description || '';
+  document.getElementById('t_color').value = t.color || '#3B82F6';
+  document.getElementById('t_agent').value = t.responsible_agent || '';
+  document.getElementById('t_polygon').value = t.polygon || '';
+  document.getElementById('territoryModalTitle').textContent = 'Editar Território';
+  openModal('territoryModal');
+}
+
+async function saveTerritory() {
+  const id = document.getElementById('t_id').value;
+  const name = document.getElementById('t_name').value.trim();
+  if (!name) { showToast('Nome é obrigatório', true); return; }
+  let polygon = document.getElementById('t_polygon').value.trim() || null;
+  if (polygon) {
+    try { JSON.parse(polygon); } catch { showToast('Polígono JSON inválido', true); return; }
+  }
+  const body = {
+    name,
+    description: document.getElementById('t_description').value || null,
+    color: document.getElementById('t_color').value,
+    responsible_agent: document.getElementById('t_agent').value || null,
+    polygon,
+  };
+  const res = await fetch(
+    id ? `${API}/api/territories/${id}` : `${API}/api/territories/`,
+    { method: id ? 'PUT' : 'POST', headers: authHeaders(), body: JSON.stringify(body) }
+  );
+  if (res.ok) {
+    showToast(id ? 'Território atualizado ✓' : 'Território criado ✓');
+    closeModal('territoryModal');
+    loadTerritories();
+  } else {
+    const e = await res.json();
+    showToast(e.detail || 'Erro ao salvar', true);
+  }
+}
+
+async function deleteTerritory(id, name) {
+  if (!confirm(`Excluir território "${name}"? Os leads serão desvinculados.`)) return;
+  const res = await fetch(`${API}/api/territories/${id}`, { method: 'DELETE', headers: authHeaders() });
+  if (res.status === 204) {
+    showToast('Território excluído');
+    loadTerritories();
+  } else {
+    showToast('Erro ao excluir', true);
+  }
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────────
+
+async function loadUsers() {
+  const res = await fetch(`${API}/api/auth/users`, { headers: authHeaders() });
+  if (!res.ok) {
+    document.getElementById('usersTable').innerHTML = '<tr><td colspan="5" style="color:#9ca3af;text-align:center;padding:16px;">Acesso restrito a administradores</td></tr>';
+    return;
+  }
+  const users = await res.json();
+  document.getElementById('usersTable').innerHTML = users.map(u => `
+    <tr>
+      <td><strong>${u.username}</strong></td>
+      <td>${u.full_name||'–'}</td>
+      <td>${u.email||'–'}</td>
+      <td><span class="badge ${u.is_admin?'badge-admin':'badge-user'}">${u.is_admin?'Admin':'Usuário'}</span></td>
+      <td><span style="color:${u.is_active?'#10b981':'#ef4444'}">${u.is_active?'Ativo':'Inativo'}</span></td>
+    </tr>`).join('');
+}
+
+async function saveUser() {
+  const username = document.getElementById('u_username').value.trim();
+  const password = document.getElementById('u_password').value;
+  if (!username || !password) { showToast('Usuário e senha são obrigatórios', true); return; }
+  const body = {
+    username,
+    password,
+    full_name: document.getElementById('u_fullname').value || null,
+    email: document.getElementById('u_email').value || null,
+    is_admin: document.getElementById('u_role').value === 'true',
+  };
+  const res = await fetch(`${API}/api/auth/users`, {
+    method: 'POST', headers: authHeaders(), body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    showToast('Usuário criado ✓');
+    closeModal('userModal');
+    loadUsers();
+  } else {
+    const e = await res.json();
+    showToast(e.detail || 'Erro ao criar usuário', true);
+  }
+}
+
+async function changePassword() {
+  const current = document.getElementById('cp_current').value;
+  const newPwd = document.getElementById('cp_new').value;
+  const confirm = document.getElementById('cp_confirm').value;
+  if (!current || !newPwd) { showToast('Preencha todos os campos', true); return; }
+  if (newPwd !== confirm) { showToast('As senhas não coincidem', true); return; }
+  if (newPwd.length < 6) { showToast('A nova senha deve ter ao menos 6 caracteres', true); return; }
+  const res = await fetch(`${API}/api/auth/change-password`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ current_password: current, new_password: newPwd }),
+  });
+  if (res.ok) {
+    showToast('Senha alterada ✓');
+    ['cp_current','cp_new','cp_confirm'].forEach(id => document.getElementById(id).value = '');
+  } else {
+    const e = await res.json();
+    showToast(e.detail || 'Erro ao alterar senha', true);
+  }
+}
+
+loadTerritories();
+</script>
+</body>
+</html>

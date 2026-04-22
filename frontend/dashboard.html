@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – Plataforma de Leads</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; }
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+      background: #1e3a5f; color: #fff; display: flex; flex-direction: column; padding: 24px 0; z-index: 100;
+    }
+    .sidebar .logo { padding: 0 20px 24px; font-size: 1rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .sidebar a {
+      display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+      color: rgba(255,255,255,.8); text-decoration: none; font-size: .9rem; transition: background .2s;
+    }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,.12); color: #fff; }
+    .sidebar-bottom { margin-top: auto; padding: 12px 20px; border-top: 1px solid rgba(255,255,255,.1); }
+    .user-info { font-size: .8rem; color: rgba(255,255,255,.7); margin-bottom: 8px; }
+    .btn-logout { background: rgba(239,68,68,.2); color: #fca5a5; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; width: 100%; }
+    .btn-logout:hover { background: rgba(239,68,68,.4); }
+    .main { margin-left: 220px; padding: 28px; min-height: 100vh; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 10px; }
+    .page-header h1 { font-size: 1.5rem; color: #1e3a5f; }
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { padding: 9px 16px; border-radius: 7px; border: none; cursor: pointer; font-size: .88rem; font-weight: 600; transition: background .2s; }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: #fff; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-sm { padding: 5px 10px; font-size: .78rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .stat-card .label { font-size: .78rem; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; }
+    .stat-card .value { font-size: 2rem; font-weight: 700; margin: 4px 0; }
+    .stat-card.blue .value { color: #2563eb; }
+    .stat-card.green .value { color: #10b981; }
+    .stat-card.amber .value { color: #f59e0b; }
+    .stat-card.purple .value { color: #8b5cf6; }
+    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .chart-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .chart-card h3 { font-size: .95rem; color: #374151; margin-bottom: 14px; }
+    .chart-card canvas { max-height: 220px; }
+    .table-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .toolbar input[type=text] {
+      flex: 1; min-width: 180px; padding: 8px 12px; border: 1.5px solid #d1d5db;
+      border-radius: 7px; font-size: .87rem; outline: none;
+    }
+    .toolbar input[type=text]:focus { border-color: #2563eb; }
+    .toolbar select { padding: 8px 10px; border: 1.5px solid #d1d5db; border-radius: 7px; font-size: .83rem; outline: none; }
+    .bulk-bar {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+      padding: 10px 14px; display: none; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .bulk-bar.visible { display: flex; }
+    .bulk-bar span { font-size: .88rem; color: #1d4ed8; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+    th { text-align: left; padding: 10px 12px; border-bottom: 2px solid #e5e7eb; color: #6b7280; font-size: .78rem; text-transform: uppercase; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tr:hover td { background: #f9fafb; }
+    tr.selected td { background: #eff6ff; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .73rem; font-weight: 600; }
+    .badge-new { background: #dbeafe; color: #1d4ed8; }
+    .badge-contacted { background: #fef3c7; color: #92400e; }
+    .badge-qualified { background: #d1fae5; color: #065f46; }
+    .badge-converted { background: #ede9fe; color: #5b21b6; }
+    .badge-lost { background: #fee2e2; color: #991b1b; }
+    .score-badge { display: inline-block; padding: 2px 7px; border-radius: 12px; font-size: .76rem; font-weight: 700; }
+    .pagination { display: flex; align-items: center; gap: 8px; margin-top: 16px; justify-content: center; }
+    .pagination button { padding: 6px 12px; border: 1.5px solid #d1d5db; background: #fff; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+    .pagination button:hover { background: #f3f4f6; }
+    .pagination button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+    .page-info { font-size: .83rem; color: #6b7280; }
+    /* Modals */
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: center; justify-content: center; }
+    .modal.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 12px; padding: 28px; width: 560px; max-width: 95vw; max-height: 92vh; overflow-y: auto; }
+    .modal-box h2 { font-size: 1.1rem; margin-bottom: 18px; color: #1e3a5f; }
+    .form-group { margin-bottom: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 9px 12px; border: 1.5px solid #d1d5db; border-radius: 7px; font-size: .9rem; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: #2563eb; }
+    textarea { min-height: 70px; resize: vertical; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; flex-wrap: wrap; }
+    /* Lead detail */
+    .detail-section { margin-bottom: 18px; }
+    .detail-section h3 { font-size: .82rem; text-transform: uppercase; color: #9ca3af; margin-bottom: 8px; letter-spacing: .05em; }
+    .detail-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: .88rem; }
+    .detail-label { min-width: 110px; color: #6b7280; font-weight: 600; }
+    .detail-value { color: #1a202c; }
+    .notes-timeline { max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
+    .note-item { background: #f9fafb; border-radius: 7px; padding: 8px 12px; margin-bottom: 6px; font-size: .85rem; }
+    .note-meta { font-size: .75rem; color: #9ca3af; margin-top: 3px; }
+    /* Toast */
+    #toast { position: fixed; bottom: 24px; right: 24px; background: #1e3a5f; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: .9rem; display: none; z-index: 300; }
+    /* Import drop zone */
+    .drop-zone {
+      border: 2px dashed #d1d5db; border-radius: 8px; padding: 24px;
+      text-align: center; cursor: pointer; transition: all .2s; margin-bottom: 10px; color: #6b7280;
+    }
+    .drop-zone:hover, .drop-zone.dragover { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+    @media(max-width:768px){
+      .stats-grid{grid-template-columns:1fr 1fr;} .charts-row{grid-template-columns:1fr;}
+      .main{margin-left:0;} .sidebar{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="logo">🎯 LeadPlatform</div>
+  <a href="index.html">🏠 Início</a>
+  <a href="dashboard.html" class="active">📊 Dashboard</a>
+  <a href="map.html">🗺️ Mapa Territorial</a>
+  <a href="settings.html">⚙️ Configurações</a>
+  <div class="sidebar-bottom">
+    <div class="user-info" id="userDisplay">–</div>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="page-header">
+    <h1>📊 Dashboard</h1>
+    <div class="header-actions">
+      <button class="btn btn-success" onclick="openModal('addLeadModal')">+ Novo Lead</button>
+      <button class="btn btn-warning" onclick="openModal('importModal')">📥 Importar CSV</button>
+      <button class="btn btn-primary" onclick="exportCSV()">📤 Exportar CSV</button>
+      <a href="map.html" class="btn btn-secondary">🗺️ Mapa</a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card blue"><div class="label">Total de Leads</div><div class="value" id="statTotal">–</div></div>
+    <div class="stat-card green"><div class="label">Novos Hoje</div><div class="value" id="statToday">–</div></div>
+    <div class="stat-card amber"><div class="label">Qualificados</div><div class="value" id="statQualified">–</div></div>
+    <div class="stat-card purple"><div class="label">Convertidos</div><div class="value" id="statConverted">–</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-row">
+    <div class="chart-card"><h3>Leads por Status</h3><canvas id="statusChart"></canvas></div>
+    <div class="chart-card"><h3>Leads por Território</h3><canvas id="territoryChart"></canvas></div>
+  </div>
+
+  <!-- Leads Table -->
+  <div class="table-card">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="🔍 Buscar por nome, email, telefone, cidade..." oninput="debounceSearch()" />
+      <select id="filterStatus" onchange="resetAndLoad()">
+        <option value="">Todos os status</option>
+        <option value="new">Novo</option>
+        <option value="contacted">Contactado</option>
+        <option value="qualified">Qualificado</option>
+        <option value="converted">Convertido</option>
+        <option value="lost">Perdido</option>
+      </select>
+      <select id="filterSource" onchange="resetAndLoad()">
+        <option value="">Todas as origens</option>
+        <option value="web_form">Formulário Web</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="manual">Manual</option>
+      </select>
+      <select id="filterTerritory" onchange="resetAndLoad()">
+        <option value="">Todos os territórios</option>
+      </select>
+    </div>
+
+    <!-- Bulk actions bar -->
+    <div class="bulk-bar" id="bulkBar">
+      <span id="bulkCount">0 selecionados</span>
+      <button class="btn btn-warning btn-sm" onclick="bulkAction('qualify')">🤖 Qualificar com IA</button>
+      <select id="bulkStatusSelect" style="padding:5px 8px;font-size:.82rem;border:1px solid #d1d5db;border-radius:5px;">
+        <option value="">Mudar status para...</option>
+        <option value="contacted">Contactado</option>
+        <option value="qualified">Qualificado</option>
+        <option value="converted">Convertido</option>
+        <option value="lost">Perdido</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="bulkStatusChange()">✓ Aplicar</button>
+      <button class="btn btn-danger btn-sm" onclick="bulkAction('delete')">🗑️ Excluir</button>
+      <button class="btn btn-secondary btn-sm" onclick="clearSelection()">✕ Cancelar</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="checkAll" onchange="toggleAll(this)" /></th>
+          <th>Nome</th><th>Contato</th><th>Cidade</th><th>Território</th>
+          <th>Status</th><th>Score IA</th><th>Data</th><th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="leadsTable">
+        <tr><td colspan="9" style="text-align:center;padding:24px;color:#9ca3af;">Carregando...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" id="paginationBar"></div>
+    <div class="page-info" id="pageInfo" style="text-align:center;margin-top:8px;"></div>
+  </div>
+</main>
+
+<!-- ── Modals ─────────────────────────────────────────────────────────────── -->
+
+<!-- Add Lead Modal -->
+<div class="modal" id="addLeadModal">
+  <div class="modal-box">
+    <h2>➕ Novo Lead</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Nome *</label><input type="text" id="nl_name" /></div>
+      <div class="form-group"><label>Telefone</label><input type="tel" id="nl_phone" placeholder="+55 11 99999-9999" /></div>
+    </div>
+    <div class="form-group"><label>E-mail</label><input type="email" id="nl_email" /></div>
+    <div class="form-group"><label>Endereço</label><input type="text" id="nl_address" /></div>
+    <div class="form-row">
+      <div class="form-group"><label>Cidade</label><input type="text" id="nl_city" /></div>
+      <div class="form-group"><label>Estado</label>
+        <select id="nl_state">
+          <option value="">Selecione</option>
+          <option>SP</option><option>RJ</option><option>MG</option><option>RS</option>
+          <option>BA</option><option>PR</option><option>SC</option><option>GO</option>
+          <option>CE</option><option>PE</option><option>AM</option><option>PA</option>
+          <option>DF</option><option>ES</option><option>MT</option><option>MS</option>
+          <option>RN</option><option>PI</option><option>AL</option><option>SE</option>
+          <option>MA</option><option>PB</option><option>AC</option><option>AP</option>
+          <option>RO</option><option>RR</option><option>TO</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Origem</label>
+      <select id="nl_source"><option value="manual">Manual</option><option value="web_form">Formulário Web</option><option value="whatsapp">WhatsApp</option></select>
+    </div>
+    <div class="form-group"><label>Observações</label><textarea id="nl_notes"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addLeadModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitNewLead()">Salvar Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lead Detail / Edit Modal -->
+<div class="modal" id="leadDetailModal">
+  <div class="modal-box">
+    <h2 id="detailTitle">Detalhes do Lead</h2>
+    <input type="hidden" id="detail_id" />
+
+    <!-- View mode -->
+    <div id="detailView">
+      <div class="detail-section">
+        <h3>Informações</h3>
+        <div class="detail-row"><span class="detail-label">Nome:</span><span class="detail-value" id="dv_name"></span></div>
+        <div class="detail-row"><span class="detail-label">E-mail:</span><span class="detail-value" id="dv_email"></span></div>
+        <div class="detail-row"><span class="detail-label">Telefone:</span><span class="detail-value" id="dv_phone"></span></div>
+        <div class="detail-row"><span class="detail-label">Endereço:</span><span class="detail-value" id="dv_address"></span></div>
+        <div class="detail-row"><span class="detail-label">Cidade / UF:</span><span class="detail-value" id="dv_city"></span></div>
+        <div class="detail-row"><span class="detail-label">Status:</span><span class="detail-value" id="dv_status"></span></div>
+        <div class="detail-row"><span class="detail-label">Origem:</span><span class="detail-value" id="dv_source"></span></div>
+        <div class="detail-row"><span class="detail-label">Território:</span><span class="detail-value" id="dv_territory"></span></div>
+        <div class="detail-row"><span class="detail-label">Score IA:</span><span class="detail-value" id="dv_score"></span></div>
+        <div class="detail-row"><span class="detail-label">Notas IA:</span><span class="detail-value" id="dv_ainotes" style="font-style:italic;"></span></div>
+        <div class="detail-row"><span class="detail-label">Observações:</span><span class="detail-value" id="dv_notes"></span></div>
+        <div class="detail-row"><span class="detail-label">Criado em:</span><span class="detail-value" id="dv_created"></span></div>
+      </div>
+
+      <div class="detail-section">
+        <h3>Timeline / Notas</h3>
+        <div class="notes-timeline" id="notesTimeline"></div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="newNoteInput" placeholder="Adicionar anotação..." style="flex:1;" />
+          <button class="btn btn-primary btn-sm" onclick="addNote()">+ Adicionar</button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('leadDetailModal')">Fechar</button>
+        <button class="btn btn-warning" onclick="qualifyFromDetail()">🤖 Qualificar IA</button>
+        <button class="btn btn-success" onclick="openWAFromDetail()">💬 WhatsApp</button>
+        <button class="btn btn-primary" onclick="switchToEdit()">✏️ Editar</button>
+      </div>
+    </div>
+
+    <!-- Edit mode -->
+    <div id="detailEdit" style="display:none;">
+      <div class="form-row">
+        <div class="form-group"><label>Nome</label><input type="text" id="de_name" /></div>
+        <div class="form-group"><label>Telefone</label><input type="tel" id="de_phone" /></div>
+      </div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="de_email" /></div>
+      <div class="form-group"><label>Endereço</label><input type="text" id="de_address" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Cidade</label><input type="text" id="de_city" /></div>
+        <div class="form-group"><label>Estado</label>
+          <select id="de_state">
+            <option value="">Selecione</option>
+            <option>SP</option><option>RJ</option><option>MG</option><option>RS</option>
+            <option>BA</option><option>PR</option><option>SC</option><option>GO</option>
+            <option>CE</option><option>PE</option><option>AM</option><option>PA</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Status</label>
+          <select id="de_status">
+            <option value="new">Novo</option><option value="contacted">Contactado</option>
+            <option value="qualified">Qualificado</option><option value="converted">Convertido</option>
+            <option value="lost">Perdido</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Território</label>
+          <select id="de_territory"></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="de_notes"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="switchToView()">← Cancelar edição</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteLead()">🗑️ Excluir</button>
+        <button class="btn btn-primary" onclick="saveLead()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WhatsApp Modal -->
+<div class="modal" id="waModal">
+  <div class="modal-box">
+    <h2>💬 Enviar WhatsApp</h2>
+    <div class="form-group"><label>Número (com DDI)</label><input type="text" id="wa_number" placeholder="+5511999999999" /></div>
+    <div class="form-group"><label>Mensagem</label><textarea id="wa_message" style="min-height:120px;"></textarea></div>
+    <div id="wa_hint" style="font-size:.8rem;color:#6b7280;margin-bottom:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('waModal')">Cancelar</button>
+      <button class="btn btn-warning" onclick="generateAIMessage()">🤖 Gerar com IA</button>
+      <button class="btn btn-success" onclick="sendWhatsApp()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import CSV Modal -->
+<div class="modal" id="importModal">
+  <div class="modal-box">
+    <h2>📥 Importar Leads via CSV</h2>
+    <p style="font-size:.85rem;color:#6b7280;margin-bottom:14px;">
+      O arquivo CSV deve ter as colunas: <strong>nome</strong>, email, telefone, endereco, cidade, estado, observacoes.<br>
+      A primeira linha deve ser o cabeçalho.
+    </p>
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('csvFile').click()">
+      <div style="font-size:2rem;margin-bottom:8px;">📄</div>
+      <div>Clique ou arraste um arquivo CSV aqui</div>
+      <input type="file" id="csvFile" accept=".csv" style="display:none;" onchange="handleFileSelect(this)" />
+    </div>
+    <div id="importResult" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">Fechar</button>
+      <button class="btn btn-primary" id="importBtn" disabled onclick="doImport()">Importar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:8000';
+
+// ── Auth ───────────────────────────────────────────────────────────────────────
+const token = localStorage.getItem('lead_token');
+if (!token) window.location.href = 'login.html';
+const user = JSON.parse(localStorage.getItem('lead_user') || '{}');
+document.getElementById('userDisplay').textContent = user.full_name || user.username || '';
+
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+}
+function logout() {
+  localStorage.removeItem('lead_token');
+  localStorage.removeItem('lead_user');
+  window.location.href = 'login.html';
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#dc2626' : '#1e3a5f';
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3500);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+const STATUS_LABELS = { new:'Novo', contacted:'Contactado', qualified:'Qualificado', converted:'Convertido', lost:'Perdido' };
+const SOURCE_LABELS = { web_form:'Formulário Web', whatsapp:'WhatsApp', manual:'Manual' };
+function statusBadge(s) { return `<span class="badge badge-${s}">${STATUS_LABELS[s]||s}</span>`; }
+function scoreColor(n) {
+  if (n == null) return '';
+  if (n >= 70) return 'background:#d1fae5;color:#065f46';
+  if (n >= 40) return 'background:#fef3c7;color:#92400e';
+  return 'background:#fee2e2;color:#991b1b';
+}
+
+// ── Pagination state ───────────────────────────────────────────────────────────
+const PAGE_SIZE = 20;
+let currentPage = 0;
+let totalShown = 0;
+let selectedIds = new Set();
+
+function resetAndLoad() {
+  currentPage = 0;
+  clearSelection();
+  loadLeads();
+}
+
+// ── Debounced search ───────────────────────────────────────────────────────────
+let searchTimer;
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(resetAndLoad, 350);
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const r = await fetch(`${API}/api/dashboard/stats`, { headers: authHeaders() });
+  if (r.status === 401) { logout(); return; }
+  const d = await r.json();
+  document.getElementById('statTotal').textContent = d.total_leads;
+  document.getElementById('statToday').textContent = d.new_today;
+  document.getElementById('statQualified').textContent = d.qualified;
+  document.getElementById('statConverted').textContent = d.converted;
+}
+
+// ── Charts ─────────────────────────────────────────────────────────────────────
+let statusChart, territoryChart;
+async function loadCharts() {
+  const [s, t] = await Promise.all([
+    fetch(`${API}/api/dashboard/leads-by-status`, { headers: authHeaders() }).then(r => r.json()),
+    fetch(`${API}/api/dashboard/leads-by-territory`, { headers: authHeaders() }).then(r => r.json()),
+  ]);
+  const COLORS = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'];
+  if (statusChart) statusChart.destroy();
+  statusChart = new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: { labels: s.map(x => STATUS_LABELS[x.status]||x.status), datasets: [{ data: s.map(x=>x.count), backgroundColor: COLORS }] },
+    options: { plugins: { legend: { position:'bottom' } }, cutout:'65%' }
+  });
+  if (territoryChart) territoryChart.destroy();
+  territoryChart = new Chart(document.getElementById('territoryChart'), {
+    type: 'bar',
+    data: { labels: t.map(x=>x.territory_name), datasets: [{ label:'Leads', data: t.map(x=>x.count), backgroundColor: COLORS }] },
+    options: { plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, ticks:{stepSize:1} } } }
+  });
+}
+
+// ── Territories filter selector ────────────────────────────────────────────────
+async function loadTerritoryFilter() {
+  const res = await fetch(`${API}/api/territories/`, { headers: authHeaders() });
+  const territories = await res.json();
+  const sel = document.getElementById('filterTerritory');
+  territories.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name;
+    sel.appendChild(o);
+  });
+  // Also populate territory selector in edit modal
+  const de = document.getElementById('de_territory');
+  de.innerHTML = '<option value="">Sem território</option>';
+  territories.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name;
+    de.appendChild(o);
+  });
+}
+
+// ── Leads table ────────────────────────────────────────────────────────────────
+async function loadLeads() {
+  const status = document.getElementById('filterStatus').value;
+  const source = document.getElementById('filterSource').value;
+  const territory = document.getElementById('filterTerritory').value;
+  const search = document.getElementById('searchInput').value.trim();
+  const skip = currentPage * PAGE_SIZE;
+
+  let url = `${API}/api/leads/?skip=${skip}&limit=${PAGE_SIZE}`;
+  if (status) url += `&status=${status}`;
+  if (source) url += `&source=${source}`;
+  if (territory) url += `&territory_id=${territory}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+
+  const leads = await fetch(url, { headers: authHeaders() }).then(r => r.json());
+  totalShown = leads.length;
+  renderLeads(leads);
+  renderPagination(leads.length);
+}
+
+function renderLeads(leads) {
+  const tbody = document.getElementById('leadsTable');
+  if (!leads.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:#9ca3af;">Nenhum lead encontrado</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = leads.map(l => `
+    <tr class="${selectedIds.has(l.id)?'selected':''}" id="row-${l.id}">
+      <td><input type="checkbox" class="row-check" data-id="${l.id}" ${selectedIds.has(l.id)?'checked':''} onchange="toggleRow(this)" /></td>
+      <td>
+        <a href="#" onclick="openDetail(${l.id});return false;" style="color:#2563eb;text-decoration:none;font-weight:600;">${l.name}</a>
+        ${l.ai_notes?`<div style="font-size:.72rem;color:#6b7280;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.ai_notes}</div>`:''}
+      </td>
+      <td><small>${l.email||'–'}<br>${l.phone||''}</small></td>
+      <td>${l.city||'–'}${l.state?', '+l.state:''}</td>
+      <td>${l.territory?.name||'<span style="color:#d1d5db">–</span>'}</td>
+      <td>${statusBadge(l.status)}</td>
+      <td>${l.ai_score!=null?`<span class="score-badge" style="${scoreColor(l.ai_score)}">${l.ai_score}</span>`:'–'}</td>
+      <td><small>${new Date(l.created_at).toLocaleDateString('pt-BR')}</small></td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-primary btn-sm" onclick="qualifyLead(${l.id})">🤖</button>
+          <button class="btn btn-success btn-sm" onclick="openWA(${l.id},'${(l.phone||'').replace(/\D/g,'')}','${l.name.replace(/'/g,"\\'")}')">💬</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function renderPagination(count) {
+  const bar = document.getElementById('paginationBar');
+  const info = document.getElementById('pageInfo');
+  const hasPrev = currentPage > 0;
+  const hasNext = count === PAGE_SIZE;
+  bar.innerHTML = `
+    <button onclick="prevPage()" ${hasPrev?'':'disabled'}>‹ Anterior</button>
+    <span style="padding:6px 12px;font-size:.85rem;">Página ${currentPage+1}</span>
+    <button onclick="nextPage()" ${hasNext?'':'disabled'}>Próxima ›</button>`;
+  const from = currentPage * PAGE_SIZE + 1;
+  const to = currentPage * PAGE_SIZE + count;
+  info.textContent = count ? `Exibindo ${from}–${to} leads` : '';
+}
+function prevPage() { if (currentPage > 0) { currentPage--; loadLeads(); } }
+function nextPage() { currentPage++; loadLeads(); }
+
+// ── Selection / Bulk ───────────────────────────────────────────────────────────
+function toggleRow(cb) {
+  const id = parseInt(cb.dataset.id);
+  if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+  document.getElementById('row-'+id).classList.toggle('selected', cb.checked);
+  updateBulkBar();
+}
+function toggleAll(cb) {
+  document.querySelectorAll('.row-check').forEach(c => {
+    c.checked = cb.checked;
+    const id = parseInt(c.dataset.id);
+    if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+    document.getElementById('row-'+id).classList.toggle('selected', cb.checked);
+  });
+  updateBulkBar();
+}
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const count = selectedIds.size;
+  bar.classList.toggle('visible', count > 0);
+  document.getElementById('bulkCount').textContent = `${count} selecionado${count!==1?'s':''}`;
+}
+function clearSelection() {
+  selectedIds.clear();
+  document.querySelectorAll('.row-check').forEach(c => c.checked = false);
+  document.getElementById('checkAll').checked = false;
+  document.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
+  updateBulkBar();
+}
+
+async function bulkAction(action) {
+  if (!selectedIds.size) return;
+  if (action === 'delete' && !confirm(`Excluir ${selectedIds.size} lead(s)?`)) return;
+  const res = await fetch(`${API}/api/leads/bulk`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ ids: [...selectedIds], action }),
+  });
+  const data = await res.json();
+  showToast(`${data.processed} processados, ${data.failed} erros`);
+  clearSelection();
+  loadLeads(); loadStats(); loadCharts();
+}
+
+async function bulkStatusChange() {
+  const status = document.getElementById('bulkStatusSelect').value;
+  if (!status || !selectedIds.size) return;
+  const res = await fetch(`${API}/api/leads/bulk`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ ids: [...selectedIds], action: 'set_status', status }),
+  });
+  const data = await res.json();
+  showToast(`${data.processed} atualizados`);
+  clearSelection();
+  loadLeads(); loadStats(); loadCharts();
+}
+
+// ── Lead Detail ────────────────────────────────────────────────────────────────
+async function openDetail(id) {
+  const lead = await fetch(`${API}/api/leads/${id}`, { headers: authHeaders() }).then(r => r.json());
+  document.getElementById('detail_id').value = id;
+  document.getElementById('detailTitle').textContent = `👤 ${lead.name}`;
+  document.getElementById('dv_name').textContent = lead.name;
+  document.getElementById('dv_email').textContent = lead.email || '–';
+  document.getElementById('dv_phone').textContent = lead.phone || '–';
+  document.getElementById('dv_address').textContent = lead.address || '–';
+  document.getElementById('dv_city').textContent = [lead.city, lead.state].filter(Boolean).join(', ') || '–';
+  document.getElementById('dv_status').innerHTML = statusBadge(lead.status);
+  document.getElementById('dv_source').textContent = SOURCE_LABELS[lead.source] || lead.source;
+  document.getElementById('dv_territory').textContent = lead.territory?.name || '–';
+  document.getElementById('dv_score').innerHTML = lead.ai_score != null
+    ? `<span class="score-badge" style="${scoreColor(lead.ai_score)}">${lead.ai_score}/100</span>` : '–';
+  document.getElementById('dv_ainotes').textContent = lead.ai_notes || '–';
+  document.getElementById('dv_notes').textContent = lead.notes || '–';
+  document.getElementById('dv_created').textContent = new Date(lead.created_at).toLocaleString('pt-BR');
+
+  // Populate edit fields
+  document.getElementById('de_name').value = lead.name;
+  document.getElementById('de_phone').value = lead.phone || '';
+  document.getElementById('de_email').value = lead.email || '';
+  document.getElementById('de_address').value = lead.address || '';
+  document.getElementById('de_city').value = lead.city || '';
+  document.getElementById('de_state').value = lead.state || '';
+  document.getElementById('de_status').value = lead.status;
+  document.getElementById('de_territory').value = lead.territory_id || '';
+  document.getElementById('de_notes').value = lead.notes || '';
+
+  switchToView();
+  loadNotes(id);
+  openModal('leadDetailModal');
+}
+
+async function loadNotes(leadId) {
+  const notes = await fetch(`${API}/api/leads/${leadId}/notes`, { headers: authHeaders() }).then(r => r.json());
+  const tl = document.getElementById('notesTimeline');
+  tl.innerHTML = notes.length
+    ? notes.map(n => `<div class="note-item">${n.content}<div class="note-meta">${n.author} · ${new Date(n.created_at).toLocaleString('pt-BR')}</div></div>`).join('')
+    : '<div style="color:#9ca3af;font-size:.83rem;text-align:center;padding:12px;">Nenhuma anotação ainda</div>';
+  tl.scrollTop = tl.scrollHeight;
+}
+
+async function addNote() {
+  const id = parseInt(document.getElementById('detail_id').value);
+  const content = document.getElementById('newNoteInput').value.trim();
+  if (!content) return;
+  const author = user.full_name || user.username || 'admin';
+  const res = await fetch(`${API}/api/leads/${id}/notes`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ content, author }),
+  });
+  if (res.ok) {
+    document.getElementById('newNoteInput').value = '';
+    loadNotes(id);
+  }
+}
+
+function switchToView() {
+  document.getElementById('detailView').style.display = 'block';
+  document.getElementById('detailEdit').style.display = 'none';
+}
+function switchToEdit() {
+  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('detailEdit').style.display = 'block';
+}
+
+async function saveLead() {
+  const id = parseInt(document.getElementById('detail_id').value);
+  const body = {
+    name: document.getElementById('de_name').value.trim(),
+    phone: document.getElementById('de_phone').value || null,
+    email: document.getElementById('de_email').value || null,
+    address: document.getElementById('de_address').value || null,
+    city: document.getElementById('de_city').value || null,
+    state: document.getElementById('de_state').value || null,
+    status: document.getElementById('de_status').value,
+    territory_id: document.getElementById('de_territory').value ? parseInt(document.getElementById('de_territory').value) : null,
+    notes: document.getElementById('de_notes').value || null,
+  };
+  const res = await fetch(`${API}/api/leads/${id}`, {
+    method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
+  });
+  if (res.ok) {
+    showToast('Lead atualizado ✓');
+    closeModal('leadDetailModal');
+    loadLeads(); loadStats(); loadCharts();
+  } else {
+    const e = await res.json();
+    showToast(e.detail || 'Erro ao salvar', true);
+  }
+}
+
+async function deleteLead() {
+  const id = parseInt(document.getElementById('detail_id').value);
+  const name = document.getElementById('de_name').value;
+  if (!confirm(`Excluir o lead "${name}"?`)) return;
+  const res = await fetch(`${API}/api/leads/${id}`, { method: 'DELETE', headers: authHeaders() });
+  if (res.status === 204) {
+    showToast('Lead excluído');
+    closeModal('leadDetailModal');
+    loadLeads(); loadStats(); loadCharts();
+  }
+}
+
+// ── Qualify ────────────────────────────────────────────────────────────────────
+async function qualifyLead(id) {
+  showToast('Qualificando com IA...');
+  const r = await fetch(`${API}/api/leads/${id}/qualify`, { method: 'POST', headers: authHeaders() });
+  const d = await r.json();
+  showToast(`Score: ${d.score} – ${d.notes}`);
+  loadLeads(); loadStats();
+}
+
+async function qualifyFromDetail() {
+  const id = parseInt(document.getElementById('detail_id').value);
+  await qualifyLead(id);
+  openDetail(id);
+}
+
+// ── WhatsApp ───────────────────────────────────────────────────────────────────
+let waLeadId = null;
+function openWA(leadId, phone, name) {
+  waLeadId = leadId;
+  document.getElementById('wa_number').value = phone ? '+55' + phone.replace(/\D/g,'') : '';
+  document.getElementById('wa_message').value = '';
+  document.getElementById('wa_hint').textContent = `Lead: ${name}`;
+  openModal('waModal');
+}
+function openWAFromDetail() {
+  const id = parseInt(document.getElementById('detail_id').value);
+  const phone = document.getElementById('de_phone').value || '';
+  const name = document.getElementById('de_name').value || '';
+  closeModal('leadDetailModal');
+  openWA(id, phone.replace(/\D/g,''), name);
+}
+
+async function generateAIMessage() {
+  if (!waLeadId) return;
+  document.getElementById('wa_hint').textContent = 'Gerando mensagem com IA...';
+  const r = await fetch(`${API}/api/ai/generate-message`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ lead_id: waLeadId }),
+  });
+  const d = await r.json();
+  document.getElementById('wa_message').value = d.message;
+  document.getElementById('wa_hint').textContent = 'Mensagem gerada por IA ✓';
+}
+
+async function sendWhatsApp() {
+  const to = document.getElementById('wa_number').value.trim();
+  const msg = document.getElementById('wa_message').value.trim();
+  if (!to || !msg) { showToast('Preencha o número e a mensagem', true); return; }
+  const r = await fetch(`${API}/api/whatsapp/send`, {
+    method: 'POST', headers: authHeaders(),
+    body: JSON.stringify({ to_number: to, message: msg, lead_id: waLeadId }),
+  });
+  if (r.ok) { showToast('Mensagem enviada ✓'); closeModal('waModal'); }
+  else { const e = await r.json(); showToast(e.detail || 'Erro ao enviar', true); }
+}
+
+// ── Add Lead ───────────────────────────────────────────────────────────────────
+async function submitNewLead() {
+  const name = document.getElementById('nl_name').value.trim();
+  if (!name) { showToast('Nome é obrigatório', true); return; }
+  const body = {
+    name,
+    email: document.getElementById('nl_email').value || null,
+    phone: document.getElementById('nl_phone').value || null,
+    address: document.getElementById('nl_address').value || null,
+    city: document.getElementById('nl_city').value || null,
+    state: document.getElementById('nl_state').value || null,
+    notes: document.getElementById('nl_notes').value || null,
+    source: document.getElementById('nl_source').value,
+  };
+  const r = await fetch(`${API}/api/leads/`, { method:'POST', headers: authHeaders(), body: JSON.stringify(body) });
+  if (r.ok) {
+    showToast('Lead criado ✓');
+    closeModal('addLeadModal');
+    ['nl_name','nl_phone','nl_email','nl_address','nl_city','nl_notes'].forEach(id => document.getElementById(id).value = '');
+    resetAndLoad(); loadStats(); loadCharts();
+  } else {
+    const e = await r.json();
+    showToast(e.detail || 'Erro ao criar lead', true);
+  }
+}
+
+// ── Export CSV ─────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const status = document.getElementById('filterStatus').value;
+  const search = document.getElementById('searchInput').value.trim();
+  let url = `${API}/api/leads/export/csv?`;
+  if (status) url += `&status=${status}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+  // Fetch with auth header and trigger download
+  fetch(url, { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(r => r.blob())
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `leads_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    });
+}
+
+// ── Import CSV ─────────────────────────────────────────────────────────────────
+let importFile = null;
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) { importFile = file; updateDropZone(file.name); }
+});
+
+function handleFileSelect(input) {
+  importFile = input.files[0];
+  if (importFile) updateDropZone(importFile.name);
+}
+function updateDropZone(name) {
+  dropZone.innerHTML = `<div style="font-size:2rem;margin-bottom:8px;">✅</div><div>${name} selecionado</div>`;
+  document.getElementById('importBtn').disabled = false;
+}
+
+async function doImport() {
+  if (!importFile) return;
+  const btn = document.getElementById('importBtn');
+  btn.disabled = true; btn.textContent = 'Importando...';
+  const fd = new FormData();
+  fd.append('file', importFile);
+  const r = await fetch(`${API}/api/leads/import/csv`, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token },
+    body: fd,
+  });
+  const result = await r.json();
+  const el = document.getElementById('importResult');
+  if (r.ok) {
+    el.style.display = 'block';
+    el.style.background = result.errors.length ? '#fef3c7' : '#d1fae5';
+    el.style.color = result.errors.length ? '#92400e' : '#065f46';
+    el.style.padding = '12px 14px';
+    el.style.borderRadius = '7px';
+    el.innerHTML = `✓ ${result.created} lead(s) importados.<br>${result.errors.length ? '⚠️ Erros: ' + result.errors.join('; ') : ''}`;
+    resetAndLoad(); loadStats(); loadCharts();
+  } else {
+    el.style.display = 'block';
+    el.style.background = '#fee2e2';
+    el.style.color = '#991b1b';
+    el.innerHTML = '❌ Erro ao importar';
+  }
+  btn.disabled = false; btn.textContent = 'Importar';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadStats(), loadCharts(), loadTerritoryFilter(), loadLeads()]);
+}
+init();
+setInterval(() => { loadStats(); }, 30000);
+</script>
+</body>
+</html>
