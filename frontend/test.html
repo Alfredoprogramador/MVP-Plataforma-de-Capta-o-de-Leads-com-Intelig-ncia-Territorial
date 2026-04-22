@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab de Testes da API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f5efe3;
+      --bg-panel: #fff9ec;
+      --ink: #17222e;
+      --ink-soft: #425466;
+      --accent: #0f766e;
+      --accent-2: #ea580c;
+      --line: #d8ceb8;
+      --ok: #166534;
+      --err: #b91c1c;
+      --warn: #92400e;
+      --shadow: 0 12px 34px rgba(23, 34, 46, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 10%, #fff4d6 0%, transparent 38%),
+        radial-gradient(circle at 94% 86%, #d6f8ef 0%, transparent 38%),
+        linear-gradient(180deg, #fff8ea 0%, #f5efe3 100%);
+      padding: 24px;
+    }
+
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(120deg, #fff9ed 0%, #fff2d4 54%, #e9fff8 100%);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -34px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: rgba(15, 118, 110, 0.12);
+      filter: blur(1px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--ink-soft);
+      max-width: 760px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      animation: rise 360ms ease both;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .field label {
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      font-weight: 600;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #cdbfa2;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.88rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid #154f4a;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 600;
+      padding: 9px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.18s ease, filter 0.18s ease;
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border-color: #baa782;
+    }
+
+    button.warn {
+      background: var(--accent-2);
+      border-color: #b45309;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.98);
+    }
+
+    .token {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1px dashed #bfae8d;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+      min-height: 58px;
+      max-height: 125px;
+      overflow: auto;
+    }
+
+    .response {
+      font-family: "IBM Plex Mono", monospace;
+      background: #131a1e;
+      color: #d4f4ff;
+      border-radius: 12px;
+      border: 1px solid #2a3a43;
+      min-height: 320px;
+      max-height: 540px;
+      overflow: auto;
+      padding: 12px;
+      line-height: 1.45;
+      font-size: 0.84rem;
+    }
+
+    .status {
+      margin: 8px 0 0;
+      font-size: 0.86rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    .status.warn { color: var(--warn); }
+
+    .hint {
+      margin-top: 8px;
+      color: var(--ink-soft);
+      font-size: 0.83rem;
+    }
+
+    .file-meta {
+      margin-top: 6px;
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 14px; }
+      .row { grid-template-columns: 1fr; }
+      .btn-row button { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <h1>Lab de Testes da API</h1>
+      <p class="subtitle">Use esta tela para validar login, endpoints protegidos e criacao/listagem de leads sem precisar abrir terminal.</p>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Conexao e Auth</h2>
+
+        <div class="field">
+          <label for="apiBase">Base da API</label>
+          <input id="apiBase" type="text" value="/api" />
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="username">Usuario</label>
+            <input id="username" type="text" value="admin" />
+          </div>
+          <div class="field">
+            <label for="password">Senha</label>
+            <input id="password" type="password" value="admin123" />
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-bottom: 10px;">
+          <button id="btnLogin">Fazer login</button>
+          <button id="btnHealth" class="secondary">Health</button>
+          <button id="btnMe" class="secondary">Quem sou eu</button>
+          <button id="btnStats" class="secondary">Dashboard stats</button>
+        </div>
+
+        <div class="field">
+          <label>Token atual</label>
+          <div id="tokenBox" class="token">Nenhum token salvo.</div>
+        </div>
+        <p id="authStatus" class="status warn">Nao autenticado.</p>
+      </article>
+
+      <article class="panel">
+        <h2>Acoes Rapidas de Lead</h2>
+
+        <div class="row">
+          <div class="field">
+            <label for="leadName">Nome</label>
+            <input id="leadName" type="text" value="Lead de Teste Frontend" />
+          </div>
+          <div class="field">
+            <label for="leadCity">Cidade</label>
+            <input id="leadCity" type="text" value="Sao Paulo" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="leadPhone">Telefone</label>
+            <input id="leadPhone" type="text" value="+5511999998888" />
+          </div>
+          <div class="field">
+            <label for="leadSource">Origem</label>
+            <select id="leadSource">
+              <option value="web_form">web_form</option>
+              <option value="whatsapp">whatsapp</option>
+              <option value="manual">manual</option>
+              <option value="import_csv">import_csv</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-bottom: 10px;">
+          <button id="btnCreateLead" class="warn">Criar lead</button>
+          <button id="btnListLeads" class="secondary">Listar leads</button>
+        </div>
+
+        <div class="field" style="margin-top: 14px;">
+          <label for="csvFile">Importar CSV de leads</label>
+          <input id="csvFile" type="file" accept=".csv,text/csv" />
+          <div id="csvMeta" class="file-meta">Nenhum arquivo selecionado.</div>
+        </div>
+
+        <div class="btn-row" style="margin-bottom: 10px;">
+          <button id="btnUploadCsv">Enviar CSV</button>
+          <button id="btnCsvSample" class="secondary">Ver modelo CSV</button>
+          <button id="btnCsvDownload" class="secondary">Baixar modelo CSV</button>
+        </div>
+
+        <p class="hint">Listagem usa limite 20 para facilitar verificacao rapida.</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h2>Requisicao Manual</h2>
+      <div class="row">
+        <div class="field">
+          <label for="method">Metodo</label>
+          <select id="method">
+            <option>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>DELETE</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="path">Path (relativo a base)</label>
+          <input id="path" type="text" value="/leads/?skip=0&limit=20" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="payload">Body JSON (opcional)</label>
+        <textarea id="payload">{
+  "name": "Lead manual",
+  "city": "Curitiba",
+  "source": "manual"
+}</textarea>
+      </div>
+
+      <div class="btn-row">
+        <button id="btnSend">Enviar requisicao</button>
+        <button id="btnClear" class="secondary">Limpar resposta</button>
+      </div>
+
+      <p id="requestStatus" class="status warn">Aguardando requisicao.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Resposta</h2>
+      <pre id="responseBox" class="response">Sem resposta ainda.</pre>
+    </section>
+  </main>
+
+  <script>
+    const tokenKey = "lead_platform_test_token";
+
+    const apiBaseEl = document.getElementById("apiBase");
+    const tokenBox = document.getElementById("tokenBox");
+    const authStatus = document.getElementById("authStatus");
+    const responseBox = document.getElementById("responseBox");
+    const requestStatus = document.getElementById("requestStatus");
+    const csvFileEl = document.getElementById("csvFile");
+    const csvMetaEl = document.getElementById("csvMeta");
+
+    const readToken = () => localStorage.getItem(tokenKey) || "";
+    const saveToken = (token) => localStorage.setItem(tokenKey, token);
+
+    const normalizeBase = () => {
+      let base = apiBaseEl.value.trim() || "/api";
+      if (!base.startsWith("http") && !base.startsWith("/")) base = `/${base}`;
+      return base.replace(/\/$/, "");
+    };
+
+    const buildUrl = (path) => {
+      const base = normalizeBase();
+      if (path.startsWith("http://") || path.startsWith("https://")) return path;
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+      if (base.startsWith("http://") || base.startsWith("https://")) {
+        return `${base}${normalizedPath}`;
+      }
+      return `${window.location.origin}${base}${normalizedPath}`;
+    };
+
+    const pretty = (value) => {
+      if (typeof value === "string") {
+        try {
+          return JSON.stringify(JSON.parse(value), null, 2);
+        } catch {
+          return value;
+        }
+      }
+      return JSON.stringify(value, null, 2);
+    };
+
+    const setAuthState = (message, type) => {
+      authStatus.className = `status ${type}`;
+      authStatus.textContent = message;
+    };
+
+    const setRequestState = (message, type) => {
+      requestStatus.className = `status ${type}`;
+      requestStatus.textContent = message;
+    };
+
+    const showResponse = (status, data, url, method) => {
+      responseBox.textContent = [
+        `${method} ${url}`,
+        `Status: ${status}`,
+        "",
+        typeof data === "string" ? data : pretty(data)
+      ].join("\n");
+    };
+
+    const getCsvTemplate = () => {
+      return [
+        "nome,email,telefone,cidade,estado,endereco,observacoes",
+        "Maria da Silva,maria@exemplo.com,+5511988887777,Sao Paulo,SP,Rua A 123,Lead vindo da campanha",
+        "Joao Pereira,joao@exemplo.com,+5521999990000,Rio de Janeiro,RJ,Av B 456,Contato por indicacao"
+      ].join("\n");
+    };
+
+    const showCsvTemplate = () => {
+      const template = getCsvTemplate();
+      showResponse(200, template, "CSV template", "LOCAL");
+      setRequestState("Modelo CSV exibido no painel de resposta.", "ok");
+    };
+
+    const downloadCsvTemplate = () => {
+      const content = getCsvTemplate();
+      const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "modelo-importacao-leads.csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      setRequestState("Download do modelo CSV iniciado.", "ok");
+    };
+
+    const callApi = async (method, path, body) => {
+      const token = readToken();
+      const url = buildUrl(path);
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const options = { method, headers };
+      if (body !== undefined && body !== null && method !== "GET" && method !== "DELETE") {
+        options.body = JSON.stringify(body);
+      }
+
+      try {
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let payload = text;
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          payload = text;
+        }
+        showResponse(res.status, payload, url, method);
+        setRequestState(res.ok ? "Requisicao concluida com sucesso." : "Requisicao retornou erro.", res.ok ? "ok" : "err");
+        return { ok: res.ok, status: res.status, payload };
+      } catch (error) {
+        showResponse("NETWORK", String(error), url, method);
+        setRequestState("Falha de rede/conexao.", "err");
+        return { ok: false, status: 0, payload: String(error) };
+      }
+    };
+
+    const uploadCsv = async () => {
+      const file = csvFileEl.files && csvFileEl.files[0];
+      if (!file) {
+        setRequestState("Selecione um arquivo CSV antes de enviar.", "warn");
+        return;
+      }
+
+      const token = readToken();
+      const url = buildUrl("/leads/import/csv");
+      const form = new FormData();
+      form.append("file", file);
+
+      const headers = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers,
+          body: form
+        });
+        const text = await res.text();
+        let payload = text;
+        try {
+          payload = JSON.parse(text);
+        } catch {
+          payload = text;
+        }
+        showResponse(res.status, payload, url, "POST");
+        setRequestState(res.ok ? "Importacao CSV concluida." : "Importacao CSV retornou erro.", res.ok ? "ok" : "err");
+      } catch (error) {
+        showResponse("NETWORK", String(error), url, "POST");
+        setRequestState("Falha de rede durante upload CSV.", "err");
+      }
+    };
+
+    const updateCsvMeta = () => {
+      const file = csvFileEl.files && csvFileEl.files[0];
+      if (!file) {
+        csvMetaEl.textContent = "Nenhum arquivo selecionado.";
+        return;
+      }
+      csvMetaEl.textContent = `Arquivo: ${file.name} | Tamanho: ${file.size} bytes`;
+    };
+
+    const refreshTokenUI = () => {
+      const token = readToken();
+      tokenBox.textContent = token || "Nenhum token salvo.";
+      if (token) {
+        setAuthState("Token carregado no navegador.", "ok");
+      } else {
+        setAuthState("Nao autenticado.", "warn");
+      }
+    };
+
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const result = await callApi("POST", "/auth/login", { username, password });
+      if (result.ok && result.payload && result.payload.access_token) {
+        saveToken(result.payload.access_token);
+        refreshTokenUI();
+      } else {
+        setAuthState("Login falhou. Confira usuario e senha.", "err");
+      }
+    });
+
+    document.getElementById("btnHealth").addEventListener("click", async () => {
+      const base = normalizeBase();
+      const url = base.startsWith("http")
+        ? `${base.replace(/\/api$/, "")}/health`
+        : `${window.location.origin}/health`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        showResponse(res.status, data, url, "GET");
+        setRequestState(res.ok ? "Health OK." : "Health com erro.", res.ok ? "ok" : "err");
+      } catch (error) {
+        showResponse("NETWORK", String(error), url, "GET");
+        setRequestState("Falha ao consultar health.", "err");
+      }
+    });
+
+    document.getElementById("btnMe").addEventListener("click", () => callApi("GET", "/auth/me"));
+    document.getElementById("btnStats").addEventListener("click", () => callApi("GET", "/dashboard/stats"));
+
+    document.getElementById("btnCreateLead").addEventListener("click", () => {
+      const body = {
+        name: document.getElementById("leadName").value.trim(),
+        city: document.getElementById("leadCity").value.trim() || null,
+        phone: document.getElementById("leadPhone").value.trim() || null,
+        source: document.getElementById("leadSource").value
+      };
+      return callApi("POST", "/leads/", body);
+    });
+
+    document.getElementById("btnListLeads").addEventListener("click", () => callApi("GET", "/leads/?skip=0&limit=20"));
+    document.getElementById("btnUploadCsv").addEventListener("click", uploadCsv);
+    document.getElementById("btnCsvSample").addEventListener("click", showCsvTemplate);
+    document.getElementById("btnCsvDownload").addEventListener("click", downloadCsvTemplate);
+    csvFileEl.addEventListener("change", updateCsvMeta);
+
+    document.getElementById("btnSend").addEventListener("click", () => {
+      const method = document.getElementById("method").value;
+      const path = document.getElementById("path").value.trim() || "/";
+      const payloadText = document.getElementById("payload").value.trim();
+      let body;
+      if (payloadText) {
+        try {
+          body = JSON.parse(payloadText);
+        } catch {
+          setRequestState("JSON invalido no body manual.", "err");
+          return;
+        }
+      }
+      callApi(method, path, body);
+    });
+
+    document.getElementById("btnClear").addEventListener("click", () => {
+      responseBox.textContent = "Sem resposta ainda.";
+      setRequestState("Resposta limpa.", "warn");
+    });
+
+    refreshTokenUI();
+    updateCsvMeta();
+  </script>
+</body>
+</html>
